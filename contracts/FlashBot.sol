@@ -125,7 +125,7 @@ contract FlashBot is Ownable {
         )
     {
         require(pool0 != pool1, 'Same pair address');
-        console.log('Pool token addresses: %s, %s, %s, %s', IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1(), IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
+//        console.log('Pool token addresses: %s, %s, %s, %s', IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1(), IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
         (address pool0Token0, address pool0Token1) = (IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1());
         (address pool1Token0, address pool1Token1) = (IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
         require(pool0Token0 < pool0Token1 && pool1Token0 < pool1Token1, 'Non standard uniswap AMM pair');
