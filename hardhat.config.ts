@@ -1,6 +1,7 @@
 import { task, HardhatUserConfig } from 'hardhat/config';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-waffle';
+import "hardhat-gas-reporter";
 
 // import deployer from './.secret';
 
@@ -9,7 +10,7 @@ const BSC_RPC = 'https://bsc-dataseed1.defibit.io/';
 const BSC_Tetsnet_RPC = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
 
 const config: HardhatUserConfig = {
-  solidity: { version: '0.7.6' },
+  solidity: { version: '0.8.7' },
   networks: {
     hardhat: {
       // loggingEnabled: true,

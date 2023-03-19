@@ -38,7 +38,7 @@ struct CallbackData {
     uint256 debtTokenOutAmount;
 }
 
-contract FlashBot is Ownable {
+contract FlashBotDev is Ownable {
     using Decimal for Decimal.D256;
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -316,14 +316,79 @@ contract FlashBot is Ownable {
         int256 b = 2 * b1 * b2 * (a1 + a2);
         int256 c = b1 * b2 * (a1 * b2 - a2 * b1);
 
-        (int256 x1, int256 x2) = calcSolutionForQuadratic(a, b, c);
+        (int256 x1, int256 x2) = calcSolutionForQuadraticABDK2(a, b, c);
 
         // 0 < x < b1 and 0 < x < b2
         require((x1 > 0 && x1 < b1 && x1 < b2) || (x2 > 0 && x2 < b1 && x2 < b2), 'Wrong input order');
         amount = (x1 > 0 && x1 < b1 && x1 < b2) ? uint256(x1) * d : uint256(x2) * d;
     }
 
+    /// @dev find solution of quadratic equation: ax^2 + bx + c = 0, only return the positive solution
+    // method 1, qudratic formula with naive Newton's method on sqrt
     function calcSolutionForQuadratic(
+        int256 a,
+        int256 b,
+        int256 c
+    ) internal pure returns (int256 x1, int256 x2) {
+        int256 m = b**2 - 4 * a * c;
+        // m < 0 leads to complex number
+        require(m >= 0, 'Complex number');
+
+        int256 sqrtM = int256(sqrt(uint256(m)));
+        x1 = (-b + sqrtM) / (2 * a);
+        x2 = (-b - sqrtM) / (2 * a);
+    }
+
+    // method 1, qudratic formula with naive Newton's method on sqrt, functions combined
+    function calcSolutionForQuadratic2(
+        int256 a,
+        int256 b,
+        int256 c
+    ) internal pure returns (int256 x1, int256 x2) {
+        int256 m = b**2 - 4 * a * c;
+        // m < 0 leads to complex number
+        require(m >= 0, 'Complex number');
+
+        uint256 n = uint256(m);
+        assert(n > 1);
+
+        // The scale factor is a crude way to turn everything into integer calcs.
+        // Actually do (n * 10 ^ 4) ^ (1/2)
+        uint256 _n = n * 10**6;
+        uint256 res = _n;
+
+        uint256 xi;
+        while (true) {
+            xi = (res + _n / res) / 2;
+            // don't need be too precise to save gas
+            if (res - xi < 1000) {
+                break;
+            }
+            res = xi;
+        }
+        int256 sqrtM = int256(res = res / 10**3);
+        x1 = (-b + sqrtM) / (2 * a);
+        x2 = (-b - sqrtM) / (2 * a);
+    }
+
+    function calcSolutionForQuadraticABDK(
+        int256 a,
+        int256 b,
+        int256 c
+    ) internal pure returns (int256 x1, int256 x2) {
+        int256 m = b * b - 4 * a * c;
+        // m < 0 leads to complex number
+        require(m >= 0, 'Complex number');
+
+        assert(m > 1);
+
+        int256 sqrtM = int256(sqrt2(uint256(m)));
+
+        x1 = (-b + sqrtM) / (2 * a);
+        x2 = (-b - sqrtM) / (2 * a);
+    }
+
+    function calcSolutionForQuadraticABDK2(
         int256 a,
         int256 b,
         int256 c
@@ -410,9 +475,33 @@ contract FlashBot is Ownable {
         }
     }
 
-    function estimateGasCost(int256 a, int256 b, int256 c) internal view returns (uint256) {
+    function estimateGasCostQuadratic1(int256 a, int256 b, int256 c) internal view returns (uint256) {
         uint256 gasStart = gasleft();
         calcSolutionForQuadratic(a, b, c);
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = gasStart - gasEnd;
+        return gasUsed;
+    }
+
+    function estimateGasCostQuadratic2(int256 a, int256 b, int256 c) internal view returns (uint256) {
+        uint256 gasStart = gasleft();
+        calcSolutionForQuadratic2(a, b, c);
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = gasStart - gasEnd;
+        return gasUsed;
+    }
+
+    function estimateGasCostABDK(int256 a, int256 b, int256 c) internal view returns (uint256) {
+        uint256 gasStart = gasleft();
+        calcSolutionForQuadraticABDK(a, b, c);
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = gasStart - gasEnd;
+        return gasUsed;
+    }
+
+    function estimateGasCostABDK2(int256 a, int256 b, int256 c) internal view returns (uint256) {
+        uint256 gasStart = gasleft();
+        calcSolutionForQuadraticABDK2(a, b, c);
         uint256 gasEnd = gasleft();
         uint256 gasUsed = gasStart - gasEnd;
         return gasUsed;
