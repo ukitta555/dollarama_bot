@@ -362,54 +362,6 @@ contract FlashBot is Ownable {
         x2 = (-b - sqrtM) / (2 * a);
     }
 
-    /// @dev Newton’s method for caculating square root of n
-    function sqrt(uint256 n) internal pure returns (uint256 res) {
-        assert(n > 1);
-
-        // The scale factor is a crude way to turn everything into integer calcs.
-        // Actually do (n * 10 ^ 4) ^ (1/2)
-        uint256 _n = n * 10**6;
-        uint256 c = _n;
-        res = _n;
-
-        uint256 xi;
-        while (true) {
-            xi = (res + c / res) / 2;
-            // don't need be too precise to save gas
-            if (res - xi < 1000) {
-                break;
-            }
-            res = xi;
-        }
-        res = res / 10**3;
-    }
-
-    function sqrt2(uint256 x) internal pure returns (uint256) {
-        unchecked {
-            if (x == 0) return 0;
-            else {
-                uint256 xx = x;
-                uint256 r = 1;
-                if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
-                if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
-                if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
-                if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
-                if (xx >= 0x100) { xx >>= 8; r <<= 4; }
-                if (xx >= 0x10) { xx >>= 4; r <<= 2; }
-                if (xx >= 0x4) { r <<= 1; }
-                r = (r + x / r) >> 1;
-                r = (r + x / r) >> 1;
-                r = (r + x / r) >> 1;
-                r = (r + x / r) >> 1;
-                r = (r + x / r) >> 1;
-                r = (r + x / r) >> 1;
-                r = (r + x / r) >> 1; // Seven iterations should be enough
-                uint256 r1 = x / r;
-                return r < r1 ? r : r1;
-            }
-        }
-    }
-
     function estimateGasCost(int256 a, int256 b, int256 c) internal view returns (uint256) {
         uint256 gasStart = gasleft();
         calcSolutionForQuadratic(a, b, c);
