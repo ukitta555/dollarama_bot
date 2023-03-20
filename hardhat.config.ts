@@ -36,6 +36,11 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 40000,
   },
+  gasReporter: {
+    currency: 'CAD',
+    outputFile: 'test.txt',
+    noColors: true,
+  }
 };
 
 /**

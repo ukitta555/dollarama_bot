@@ -11,7 +11,7 @@ import 'hardhat/console.sol';
 import './interfaces/IUniswapV2Pair.sol';
 import './interfaces/IWETH.sol';
 import './libraries/Decimal.sol';
-import './libraries/SafeMath.sol';
+import './libraries/SafeMathCopy.sol';
 
 struct OrderedReserves {
     uint256 a1; // base asset
@@ -40,7 +40,7 @@ struct CallbackData {
 
 contract FlashBot is Ownable {
     using Decimal for Decimal.D256;
-    using SafeMath for uint256;
+    using SafeMathCopy for uint256;
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
