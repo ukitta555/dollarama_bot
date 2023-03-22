@@ -23,8 +23,8 @@ struct ArbitrageInfo {
     address baseToken;
     address quoteToken;
     bool baseTokenSmaller;
-    address lowerPool; // pool with lower price, denominated in quote asset
-    address higherPool; // pool with higher price, denominated in quote asset
+    address poolWithLowerPrice; // pool with lower price, denominated in quote asset
+    address poolWithHigherPrice; // pool with higher price, denominated in quote asset
 }
 
 struct CallbackData {
@@ -125,10 +125,12 @@ contract FlashBot is Ownable {
         )
     {
         require(pool0 != pool1, 'Same pair address');
-//        console.log('Pool token addresses: %s, %s, %s, %s', IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1(), IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
+        console.log('Pool addresses: %s, %s', pool0, pool1);
         (address pool0Token0, address pool0Token1) = (IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1());
+        console.log('Pool token 1,2 addresses: %s, %s', pool0Token0, pool0Token1);
         (address pool1Token0, address pool1Token1) = (IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
-        require(pool0Token0 < pool0Token1 && pool1Token0 < pool1Token1, 'Non standard uniswap AMM pair');
+        console.log('Pool token 3,4 addresses: %s, %s', pool1Token0, pool1Token1);
+        require(pool0Token0 < pool0Token1 && pool1Token0 < pool1Token1, 'Non standard uniswap AMM pair'); // https://docs.uniswap.org/contracts/v2/reference/smart-contracts/pair#token0
         require(pool0Token0 == pool1Token0 && pool0Token1 == pool1Token1, 'Require same token pair');
         require(baseTokensContains(pool0Token0) || baseTokensContains(pool0Token1), 'No base token in pair');
 
@@ -147,8 +149,8 @@ contract FlashBot is Ownable {
         internal
         view
         returns (
-            address lowerPool,
-            address higherPool,
+            address poolWithLowerPrice,
+            address poolWithHigherPrice,
             OrderedReserves memory orderedReserves
         )
     {
@@ -165,18 +167,18 @@ contract FlashBot is Ownable {
         // 1. (a1, b1) represents the pool with lower price, denominated in quote asset token
         // 2. (a1, a2) are the base tokens in two pools
         if (price0.lessThan(price1)) {
-            (lowerPool, higherPool) = (pool0, pool1);
+            (poolWithLowerPrice, poolWithHigherPrice) = (pool0, pool1);
             (orderedReserves.a1, orderedReserves.b1, orderedReserves.a2, orderedReserves.b2) = baseTokenSmaller
                 ? (pool0Reserve0, pool0Reserve1, pool1Reserve0, pool1Reserve1)
                 : (pool0Reserve1, pool0Reserve0, pool1Reserve1, pool1Reserve0);
         } else {
-            (lowerPool, higherPool) = (pool1, pool0);
+            (poolWithLowerPrice, poolWithHigherPrice) = (pool1, pool0);
             (orderedReserves.a1, orderedReserves.b1, orderedReserves.a2, orderedReserves.b2) = baseTokenSmaller
                 ? (pool1Reserve0, pool1Reserve1, pool0Reserve0, pool0Reserve1)
                 : (pool1Reserve1, pool1Reserve0, pool0Reserve1, pool0Reserve0);
         }
-        console.log('Borrow from pool:', lowerPool);
-        console.log('Sell to pool:', higherPool);
+        console.log('Borrow from pool:', poolWithLowerPrice);
+        console.log('Sell to pool:', poolWithHigherPrice);
     }
 
     /// @notice Do an arbitrage between two Uniswap-like AMM pools
@@ -186,10 +188,10 @@ contract FlashBot is Ownable {
         (info.baseTokenSmaller, info.baseToken, info.quoteToken) = isbaseTokenSmaller(pool0, pool1);
 
         OrderedReserves memory orderedReserves;
-        (info.lowerPool, info.higherPool, orderedReserves) = getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
+        (info.poolWithLowerPrice, info.poolWithHigherPrice, orderedReserves) = getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
 
         // this must be updated every transaction for callback origin authentication
-        permissionedPairAddress = info.lowerPool;
+        permissionedPairAddress = info.poolWithLowerPrice;
 
         uint256 balanceBefore = IERC20(info.baseToken).balanceOf(address(this));
 
@@ -207,8 +209,8 @@ contract FlashBot is Ownable {
 
             // can only initialize this way to avoid stack too deep error
             CallbackData memory callbackData;
-            callbackData.debtPool = info.lowerPool;
-            callbackData.targetPool = info.higherPool;
+            callbackData.debtPool = info.poolWithLowerPrice;
+            callbackData.targetPool = info.poolWithHigherPrice;
             callbackData.debtTokenSmaller = info.baseTokenSmaller;
             callbackData.borrowedToken = info.quoteToken;
             callbackData.debtToken = info.baseToken;
@@ -216,7 +218,8 @@ contract FlashBot is Ownable {
             callbackData.debtTokenOutAmount = baseTokenOutAmount;
 
             bytes memory data = abi.encode(callbackData);
-            IUniswapV2Pair(info.lowerPool).swap(amount0Out, amount1Out, address(this), data);
+            console.log(" data length %f", data.length);
+            IUniswapV2Pair(info.poolWithLowerPrice).swap(amount0Out, amount1Out, address(this), data);
         }
 
         uint256 balanceAfter = IERC20(info.baseToken).balanceOf(address(this));
@@ -386,5 +389,22 @@ contract FlashBot is Ownable {
         uint256 numerator = amountInWithFee.mul(reserveOut);
         uint256 denominator = reserveIn.mul(1000).add(amountInWithFee);
         amountOut = numerator / denominator;
+    }
+}
+
+contract ExposedFlashBot is FlashBot {
+
+    constructor (address _WETH) FlashBot(_WETH) {}
+
+
+    function _isbaseTokenSmaller(address pool0, address pool1)
+    public
+    view
+    returns (
+        bool baseSmaller,
+        address baseToken,
+        address quoteToken
+    ) {
+        (baseSmaller, baseToken, quoteToken) = isbaseTokenSmaller(pool0, pool1);
     }
 }
