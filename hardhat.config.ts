@@ -1,6 +1,8 @@
 import { task, HardhatUserConfig } from 'hardhat/config';
 import '@typechain/hardhat';
 import '@nomiclabs/hardhat-waffle';
+import "hardhat-gas-reporter";
+
 import 'solidity-coverage'
 // import deployer from './.secret';
 
@@ -11,7 +13,7 @@ const BSC_RPC = 'https://wider-omniscient-forest.bsc.discover.quiknode.pro/ad295
 const BSC_Tetsnet_RPC = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
 
 const config: HardhatUserConfig = {
-  solidity: { version: '0.7.6' },
+  solidity: { version: '0.8.7' },
   networks: {
     hardhat: {
       // loggingEnabled: true,
@@ -38,6 +40,11 @@ const config: HardhatUserConfig = {
   mocha: {
     timeout: 40000,
   },
+  gasReporter: {
+    currency: 'CAD',
+    outputFile: 'test.txt',
+    noColors: true,
+  }
 };
 
 /**
