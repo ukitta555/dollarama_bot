@@ -7,10 +7,11 @@ const { BigNumber } = ethers;
 
 describe('MathTest', () => {
   let flashBot: InternalFuncTest;
+  const WBNB = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 
   beforeEach(async () => {
     const factory = await ethers.getContractFactory('InternalFuncTest');
-    flashBot = (await factory.deploy()) as InternalFuncTest;
+    flashBot = (await factory.deploy(WBNB)) as InternalFuncTest;
   });
 
   describe('#sqrt', () => {

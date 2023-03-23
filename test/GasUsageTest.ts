@@ -23,10 +23,11 @@ function generateParams(min: number, max: number) {
 
 describe('GasUsage', () => {
     let flashBot: InternalFuncTest;
-  
+    const WBNB = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+
     beforeEach(async () => {
       const factory = await ethers.getContractFactory('InternalFuncTest');
-      flashBot = (await factory.deploy()) as InternalFuncTest;
+      flashBot = (await factory.deploy(WBNB)) as InternalFuncTest;
     });
 
     // in these test cases, we only worry about the gas usages

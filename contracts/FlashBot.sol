@@ -402,20 +402,3 @@ contract FlashBot is Ownable {
         amountOut = numerator / denominator;
     }
 }
-
-contract ExposedFlashBot is FlashBot {
-
-    constructor (address _WETH) FlashBot(_WETH) {}
-
-
-    function _isbaseTokenSmaller(address pool0, address pool1)
-    public
-    view
-    returns (
-        bool baseSmaller,
-        address baseToken,
-        address quoteToken
-    ) {
-        (baseSmaller, baseToken, quoteToken) = isbaseTokenSmaller(pool0, pool1);
-    }
-}

@@ -5,7 +5,7 @@ pragma abicoder v2;
 import '../FlashBot_dev.sol';
 
 contract InternalFuncTest is FlashBotDev {
-    constructor() FlashBotDev(address(1)) {}
+    constructor(address _WETH) FlashBotDev(_WETH) {}
 
     function _calcBorrowAmount(OrderedReserves memory reserves) public pure returns (uint256) {
         return calcBorrowAmount(reserves);
@@ -81,5 +81,16 @@ contract InternalFuncTest is FlashBotDev {
         int256 c
     ) public view returns (uint256) {
         return estimateGasCostABDK2(a, b, c);
+    }
+
+    function _isbaseTokenSmaller(address pool0, address pool1)
+    public
+    view
+    returns (
+        bool baseSmaller,
+        address baseToken,
+        address quoteToken
+    ) {
+        (baseSmaller, baseToken, quoteToken) = isbaseTokenSmaller(pool0, pool1);
     }
 }
