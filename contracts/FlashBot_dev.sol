@@ -11,7 +11,7 @@ import 'hardhat/console.sol';
 import './interfaces/IUniswapV2Pair.sol';
 import './interfaces/IWETH.sol';
 import './libraries/Decimal.sol';
-import './libraries/SafeMathCopy.sol';
+import './libraries/SafeMath.sol';
 
 struct OrderedReserves {
     uint256 a1; // base asset
@@ -24,8 +24,8 @@ struct ArbitrageInfo {
     address baseToken;
     address quoteToken;
     bool baseTokenSmaller;
-    address poolWithLowerPrice; // pool with lower price, denominated in quote asset
-    address poolWithHigherPrice; // pool with higher price, denominated in quote asset
+    address lowerPool; // pool with lower price, denominated in quote asset
+    address higherPool; // pool with higher price, denominated in quote asset
 }
 
 struct CallbackData {
@@ -38,9 +38,9 @@ struct CallbackData {
     uint256 debtTokenOutAmount;
 }
 
-contract FlashBot is Ownable {
+contract FlashBotDev is Ownable {
     using Decimal for Decimal.D256;
-    using SafeMathCopy for uint256;
+    using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -126,12 +126,10 @@ contract FlashBot is Ownable {
         )
     {
         require(pool0 != pool1, 'Same pair address');
-        console.log('Pool addresses: %s, %s', pool0, pool1);
+//        console.log('Pool token addresses: %s, %s, %s, %s', IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1(), IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
         (address pool0Token0, address pool0Token1) = (IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1());
-        console.log('Pool token 1,2 addresses: %s, %s', pool0Token0, pool0Token1);
         (address pool1Token0, address pool1Token1) = (IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
-        console.log('Pool token 3,4 addresses: %s, %s', pool1Token0, pool1Token1);
-        require(pool0Token0 < pool0Token1 && pool1Token0 < pool1Token1, 'Non standard uniswap AMM pair'); // https://docs.uniswap.org/contracts/v2/reference/smart-contracts/pair#token0
+        require(pool0Token0 < pool0Token1 && pool1Token0 < pool1Token1, 'Non standard uniswap AMM pair');
         require(pool0Token0 == pool1Token0 && pool0Token1 == pool1Token1, 'Require same token pair');
         require(baseTokensContains(pool0Token0) || baseTokensContains(pool0Token1), 'No base token in pair');
 
@@ -150,8 +148,8 @@ contract FlashBot is Ownable {
         internal
         view
         returns (
-            address poolWithLowerPrice,
-            address poolWithHigherPrice,
+            address lowerPool,
+            address higherPool,
             OrderedReserves memory orderedReserves
         )
     {
@@ -168,18 +166,18 @@ contract FlashBot is Ownable {
         // 1. (a1, b1) represents the pool with lower price, denominated in quote asset token
         // 2. (a1, a2) are the base tokens in two pools
         if (price0.lessThan(price1)) {
-            (poolWithLowerPrice, poolWithHigherPrice) = (pool0, pool1);
+            (lowerPool, higherPool) = (pool0, pool1);
             (orderedReserves.a1, orderedReserves.b1, orderedReserves.a2, orderedReserves.b2) = baseTokenSmaller
                 ? (pool0Reserve0, pool0Reserve1, pool1Reserve0, pool1Reserve1)
                 : (pool0Reserve1, pool0Reserve0, pool1Reserve1, pool1Reserve0);
         } else {
-            (poolWithLowerPrice, poolWithHigherPrice) = (pool1, pool0);
+            (lowerPool, higherPool) = (pool1, pool0);
             (orderedReserves.a1, orderedReserves.b1, orderedReserves.a2, orderedReserves.b2) = baseTokenSmaller
                 ? (pool1Reserve0, pool1Reserve1, pool0Reserve0, pool0Reserve1)
                 : (pool1Reserve1, pool1Reserve0, pool0Reserve1, pool0Reserve0);
         }
-        console.log('Borrow from pool:', poolWithLowerPrice);
-        console.log('Sell to pool:', poolWithHigherPrice);
+        console.log('Borrow from pool:', lowerPool);
+        console.log('Sell to pool:', higherPool);
     }
 
     /// @notice Do an arbitrage between two Uniswap-like AMM pools
@@ -189,10 +187,10 @@ contract FlashBot is Ownable {
         (info.baseTokenSmaller, info.baseToken, info.quoteToken) = isbaseTokenSmaller(pool0, pool1);
 
         OrderedReserves memory orderedReserves;
-        (info.poolWithLowerPrice, info.poolWithHigherPrice, orderedReserves) = getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
+        (info.lowerPool, info.higherPool, orderedReserves) = getOrderedReserves(pool0, pool1, info.baseTokenSmaller);
 
         // this must be updated every transaction for callback origin authentication
-        permissionedPairAddress = info.poolWithLowerPrice;
+        permissionedPairAddress = info.lowerPool;
 
         uint256 balanceBefore = IERC20(info.baseToken).balanceOf(address(this));
 
@@ -210,8 +208,8 @@ contract FlashBot is Ownable {
 
             // can only initialize this way to avoid stack too deep error
             CallbackData memory callbackData;
-            callbackData.debtPool = info.poolWithLowerPrice;
-            callbackData.targetPool = info.poolWithHigherPrice;
+            callbackData.debtPool = info.lowerPool;
+            callbackData.targetPool = info.higherPool;
             callbackData.debtTokenSmaller = info.baseTokenSmaller;
             callbackData.borrowedToken = info.quoteToken;
             callbackData.debtToken = info.baseToken;
@@ -219,8 +217,7 @@ contract FlashBot is Ownable {
             callbackData.debtTokenOutAmount = baseTokenOutAmount;
 
             bytes memory data = abi.encode(callbackData);
-            console.log(" data length %f", data.length);
-            IUniswapV2Pair(info.poolWithLowerPrice).swap(amount0Out, amount1Out, address(this), data);
+            IUniswapV2Pair(info.lowerPool).swap(amount0Out, amount1Out, address(this), data);
         }
 
         uint256 balanceAfter = IERC20(info.baseToken).balanceOf(address(this));
@@ -319,14 +316,79 @@ contract FlashBot is Ownable {
         int256 b = 2 * b1 * b2 * (a1 + a2);
         int256 c = b1 * b2 * (a1 * b2 - a2 * b1);
 
-        (int256 x1, int256 x2) = calcSolutionForQuadratic(a, b, c);
+        (int256 x1, int256 x2) = calcSolutionForQuadraticABDK2(a, b, c);
 
         // 0 < x < b1 and 0 < x < b2
         require((x1 > 0 && x1 < b1 && x1 < b2) || (x2 > 0 && x2 < b1 && x2 < b2), 'Wrong input order');
         amount = (x1 > 0 && x1 < b1 && x1 < b2) ? uint256(x1) * d : uint256(x2) * d;
     }
 
+    /// @dev find solution of quadratic equation: ax^2 + bx + c = 0, only return the positive solution
+    // method 1, qudratic formula with naive Newton's method on sqrt
     function calcSolutionForQuadratic(
+        int256 a,
+        int256 b,
+        int256 c
+    ) internal pure returns (int256 x1, int256 x2) {
+        int256 m = b**2 - 4 * a * c;
+        // m < 0 leads to complex number
+        require(m >= 0, 'Complex number');
+
+        int256 sqrtM = int256(sqrt(uint256(m)));
+        x1 = (-b + sqrtM) / (2 * a);
+        x2 = (-b - sqrtM) / (2 * a);
+    }
+
+    // method 1, qudratic formula with naive Newton's method on sqrt, functions combined
+    function calcSolutionForQuadratic2(
+        int256 a,
+        int256 b,
+        int256 c
+    ) internal pure returns (int256 x1, int256 x2) {
+        int256 m = b**2 - 4 * a * c;
+        // m < 0 leads to complex number
+        require(m >= 0, 'Complex number');
+
+        uint256 n = uint256(m);
+        assert(n > 1);
+
+        // The scale factor is a crude way to turn everything into integer calcs.
+        // Actually do (n * 10 ^ 4) ^ (1/2)
+        uint256 _n = n * 10**6;
+        uint256 res = _n;
+
+        uint256 xi;
+        while (true) {
+            xi = (res + _n / res) / 2;
+            // don't need be too precise to save gas
+            if (res - xi < 1000) {
+                break;
+            }
+            res = xi;
+        }
+        int256 sqrtM = int256(res = res / 10**3);
+        x1 = (-b + sqrtM) / (2 * a);
+        x2 = (-b - sqrtM) / (2 * a);
+    }
+
+    function calcSolutionForQuadraticABDK(
+        int256 a,
+        int256 b,
+        int256 c
+    ) internal pure returns (int256 x1, int256 x2) {
+        int256 m = b * b - 4 * a * c;
+        // m < 0 leads to complex number
+        require(m >= 0, 'Complex number');
+
+        assert(m > 1);
+
+        int256 sqrtM = int256(sqrt2(uint256(m)));
+
+        x1 = (-b + sqrtM) / (2 * a);
+        x2 = (-b - sqrtM) / (2 * a);
+    }
+
+    function calcSolutionForQuadraticABDK2(
         int256 a,
         int256 b,
         int256 c
@@ -365,9 +427,81 @@ contract FlashBot is Ownable {
         x2 = (-b - sqrtM) / (2 * a);
     }
 
-    function estimateGasCost(int256 a, int256 b, int256 c) internal view returns (uint256) {
+    /// @dev Newton’s method for caculating square root of n
+    function sqrt(uint256 n) internal pure returns (uint256 res) {
+        assert(n > 1);
+
+        // The scale factor is a crude way to turn everything into integer calcs.
+        // Actually do (n * 10 ^ 4) ^ (1/2)
+        uint256 _n = n * 10**6;
+        uint256 c = _n;
+        res = _n;
+
+        uint256 xi;
+        while (true) {
+            xi = (res + c / res) / 2;
+            // don't need be too precise to save gas
+            if (res - xi < 1000) {
+                break;
+            }
+            res = xi;
+        }
+        res = res / 10**3;
+    }
+
+    function sqrt2(uint256 x) internal pure returns (uint256) {
+        unchecked {
+            if (x == 0) return 0;
+            else {
+                uint256 xx = x;
+                uint256 r = 1;
+                if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }
+                if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }
+                if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }
+                if (xx >= 0x10000) { xx >>= 16; r <<= 8; }
+                if (xx >= 0x100) { xx >>= 8; r <<= 4; }
+                if (xx >= 0x10) { xx >>= 4; r <<= 2; }
+                if (xx >= 0x4) { r <<= 1; }
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1;
+                r = (r + x / r) >> 1; // Seven iterations should be enough
+                uint256 r1 = x / r;
+                return r < r1 ? r : r1;
+            }
+        }
+    }
+
+    function estimateGasCostQuadratic1(int256 a, int256 b, int256 c) internal view returns (uint256) {
         uint256 gasStart = gasleft();
         calcSolutionForQuadratic(a, b, c);
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = gasStart - gasEnd;
+        return gasUsed;
+    }
+
+    function estimateGasCostQuadratic2(int256 a, int256 b, int256 c) internal view returns (uint256) {
+        uint256 gasStart = gasleft();
+        calcSolutionForQuadratic2(a, b, c);
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = gasStart - gasEnd;
+        return gasUsed;
+    }
+
+    function estimateGasCostABDK(int256 a, int256 b, int256 c) internal view returns (uint256) {
+        uint256 gasStart = gasleft();
+        calcSolutionForQuadraticABDK(a, b, c);
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = gasStart - gasEnd;
+        return gasUsed;
+    }
+
+    function estimateGasCostABDK2(int256 a, int256 b, int256 c) internal view returns (uint256) {
+        uint256 gasStart = gasleft();
+        calcSolutionForQuadraticABDK2(a, b, c);
         uint256 gasEnd = gasleft();
         uint256 gasUsed = gasStart - gasEnd;
         return gasUsed;

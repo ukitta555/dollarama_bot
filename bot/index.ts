@@ -35,6 +35,7 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens) {
       profit: BigNumber;
       baseToken: string;
     };
+    // get gross profit based on current state of DEXes
     try {
       res = await flashBot.getProfit(pair0, pair1);
       log.debug(`Profit on ${pair.symbols}: ${ethers.utils.formatEther(res.profit)}`);
@@ -44,11 +45,14 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens) {
     }
 
     if (res.profit.gt(BigNumber.from('0'))) {
+      // account for gas
       const netProfit = await calcNetProfit(res.profit, res.baseToken, baseTokens);
+      // in case the net profit is less than we want it to be, we have to abort
       if (netProfit < config.minimumProfit) {
         return;
       }
 
+      // otherwise, we are making money, so perform arbitrage
       log.info(`Calling flash arbitrage, net profit: ${netProfit}`);
       try {
         // lock to prevent tx nonce overlap
