@@ -16,6 +16,7 @@ const config: HardhatUserConfig = {
   solidity: { version: '0.8.7' },
   networks: {
     hardhat: {
+      allowUnlimitedContractSize: true,
       // loggingEnabled: true,
       forking: {
         url: BSC_RPC,
@@ -36,7 +37,7 @@ const config: HardhatUserConfig = {
     //   chainId: 0x38,
     //   accounts: [deployer.private],
     // },
-   },
+  },
   mocha: {
     timeout: 40000,
   },

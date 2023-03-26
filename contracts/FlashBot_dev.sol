@@ -6,12 +6,12 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import 'hardhat/console.sol';
 
 import './interfaces/IUniswapV2Pair.sol';
 import './interfaces/IWETH.sol';
 import './libraries/Decimal.sol';
 import './libraries/SafeMath.sol';
+import 'hardhat/console.sol';
 
 struct OrderedReserves {
     uint256 a1; // base asset
@@ -79,14 +79,14 @@ contract FlashBotDev is Ownable {
             emit Withdrawn(owner(), balance);
         }
 
-        for (uint256 i = 0; i < baseTokens.length(); i++) {
-            address token = baseTokens.at(i);
-            balance = IERC20(token).balanceOf(address(this));
-            if (balance > 0) {
-                // do not use safe transfer here to prevents revert by any shitty token
-                IERC20(token).transfer(owner(), balance);
-            }
-        }
+//        for (uint256 i = 0; i < baseTokens.length(); i++) {
+//            address token = baseTokens.at(i);
+//            balance = IERC20(token).balanceOf(address(this));
+//            if (balance > 0) {
+//                // do not use safe transfer here to prevents revert by any shitty token
+//                IERC20(token).transfer(owner(), balance);
+//            }
+//        }
     }
 
     function addBaseToken(address token) external onlyOwner {
@@ -126,9 +126,10 @@ contract FlashBotDev is Ownable {
         )
     {
         require(pool0 != pool1, 'Same pair address');
-//        console.log('Pool token addresses: %s, %s, %s, %s', IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1(), IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
         (address pool0Token0, address pool0Token1) = (IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1());
+        console.log('Pool token 1,2 addresses: %s, %s', pool0Token0, pool0Token1);
         (address pool1Token0, address pool1Token1) = (IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
+        console.log('Pool token 3,4 addresses: %s, %s', pool1Token0, pool1Token1);
         require(pool0Token0 < pool0Token1 && pool1Token0 < pool1Token1, 'Non standard uniswap AMM pair');
         require(pool0Token0 == pool1Token0 && pool0Token1 == pool1Token1, 'Require same token pair');
         require(baseTokensContains(pool0Token0) || baseTokensContains(pool0Token1), 'No base token in pair');
@@ -153,14 +154,29 @@ contract FlashBotDev is Ownable {
             OrderedReserves memory orderedReserves
         )
     {
-        (uint256 pool0Reserve0, uint256 pool0Reserve1, ) = IUniswapV2Pair(pool0).getReserves();
-        (uint256 pool1Reserve0, uint256 pool1Reserve1, ) = IUniswapV2Pair(pool1).getReserves();
+        console.log("________________");
+        console.log('MDEX LP pool address: %s, PancakeSwap LP pool address: %s', pool0, pool1);
+        console.log("________________");
+
+        // get the reserves
+        (uint256 pool0Reserve0, uint256 pool0Reserve1, ) = IUniswapV2Pair(pool0).getReserves(); // 30 ETH, 1200 USDT -> 1:40
+        (uint256 pool1Reserve0, uint256 pool1Reserve1, ) = IUniswapV2Pair(pool1).getReserves(); // 30 ETH, 900 UST -> 1:30
+
+        console.log("________________");
+        console.log('MDEX reserves; USDT: %s; WBNB: %s', pool0Reserve0, pool0Reserve1);
+        console.log('PancakeSwap reserves; USDT: %s; WBNB: %s', pool1Reserve0, pool1Reserve1);
+        console.log("________________");
 
         // Calculate the price denominated in quote asset token
         (Decimal.D256 memory price0, Decimal.D256 memory price1) =
             baseTokenSmaller
                 ? (Decimal.from(pool0Reserve0).div(pool0Reserve1), Decimal.from(pool1Reserve0).div(pool1Reserve1))
                 : (Decimal.from(pool0Reserve1).div(pool0Reserve0), Decimal.from(pool1Reserve1).div(pool1Reserve0));
+
+        console.log("________________");
+        console.log('1 quote token equates to %d / 10^18 base tokens  on MDEX', price0.value);
+        console.log("1 quote token equates to %d / 10^18 base tokens on PancakeSwap", price1.value);
+        console.log("________________");
 
         // get a1, b1, a2, b2 with following rule:
         // 1. (a1, b1) represents the pool with lower price, denominated in quote asset token
@@ -182,7 +198,7 @@ contract FlashBotDev is Ownable {
 
     /// @notice Do an arbitrage between two Uniswap-like AMM pools
     /// @dev Two pools must contains same token pair
-    function flashArbitrage(address pool0, address pool1) external {
+    function flashArbitrage(address pool0, address pool1) public {
         ArbitrageInfo memory info;
         (info.baseTokenSmaller, info.baseToken, info.quoteToken) = isbaseTokenSmaller(pool0, pool1);
 
@@ -229,6 +245,14 @@ contract FlashBotDev is Ownable {
         permissionedPairAddress = address(1);
     }
 
+    function estimateGasCostArbitrage(address pool0, address pool1) internal returns (uint256) {
+        uint256 gasStart = gasleft();
+        flashArbitrage(pool0, pool1);
+        uint256 gasEnd = gasleft();
+        uint256 gasUsed = gasStart - gasEnd;
+        return gasUsed;
+    }
+
     function uniswapV2Call(
         address sender,
         uint256 amount0,
@@ -249,25 +273,6 @@ contract FlashBotDev is Ownable {
         IUniswapV2Pair(info.targetPool).swap(amount0Out, amount1Out, address(this), new bytes(0));
 
         IERC20(info.debtToken).safeTransfer(info.debtPool, info.debtAmount);
-    }
-
-    /// @notice Calculate how much profit we can by arbitraging between two pools
-    function getProfit(address pool0, address pool1) external view returns (uint256 profit, address baseToken) {
-        (bool baseTokenSmaller, , ) = isbaseTokenSmaller(pool0, pool1);
-        baseToken = baseTokenSmaller ? IUniswapV2Pair(pool0).token0() : IUniswapV2Pair(pool0).token1();
-
-        (, , OrderedReserves memory orderedReserves) = getOrderedReserves(pool0, pool1, baseTokenSmaller);
-
-        uint256 borrowAmount = calcBorrowAmount(orderedReserves);
-        // borrow quote token on lower price pool,
-        uint256 debtAmount = getAmountIn(borrowAmount, orderedReserves.a1, orderedReserves.b1);
-        // sell borrowed quote token on higher price pool
-        uint256 baseTokenOutAmount = getAmountOut(borrowAmount, orderedReserves.b2, orderedReserves.a2);
-        if (baseTokenOutAmount < debtAmount) {
-            profit = 0;
-        } else {
-            profit = baseTokenOutAmount - debtAmount;
-        }
     }
 
     /// @dev calculate the maximum base asset amount to borrow in order to get maximum profit during arbitrage
@@ -313,6 +318,7 @@ contract FlashBotDev is Ownable {
             (int256(reserves.a1 / d), int256(reserves.a2 / d), int256(reserves.b1 / d), int256(reserves.b2 / d));
 
         int256 a = a1 * b1 - a2 * b2;
+        // 10^24 * 10^24 * 10^24 * 2 ~ 10^72, close to overflow; hence the decision to divide by 10^24
         int256 b = 2 * b1 * b2 * (a1 + a2);
         int256 c = b1 * b2 * (a1 * b2 - a2 * b1);
 
@@ -505,6 +511,25 @@ contract FlashBotDev is Ownable {
         uint256 gasEnd = gasleft();
         uint256 gasUsed = gasStart - gasEnd;
         return gasUsed;
+    }
+
+    /// @notice Calculate how much profit we can by arbitraging between two pools
+    function getProfit(address pool0, address pool1) external view returns (uint256 profit, address baseToken) {
+        (bool baseTokenSmaller, , ) = isbaseTokenSmaller(pool0, pool1);
+        baseToken = baseTokenSmaller ? IUniswapV2Pair(pool0).token0() : IUniswapV2Pair(pool0).token1();
+
+        (, , OrderedReserves memory orderedReserves) = getOrderedReserves(pool0, pool1, baseTokenSmaller);
+
+        uint256 borrowAmount = calcBorrowAmount(orderedReserves);
+        // borrow quote token on lower price pool,
+        uint256 debtAmount = getAmountIn(borrowAmount, orderedReserves.a1, orderedReserves.b1);
+        // sell borrowed quote token on higher price pool
+        uint256 baseTokenOutAmount = getAmountOut(borrowAmount, orderedReserves.b2, orderedReserves.a2);
+        if (baseTokenOutAmount < debtAmount) {
+            profit = 0;
+        } else {
+            profit = baseTokenOutAmount - debtAmount;
+        }
     }
 
     // copy from UniswapV2Library

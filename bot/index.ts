@@ -8,6 +8,7 @@ import { Network, tryLoadPairs, getTokens } from './tokens';
 import { getBnbPrice } from './basetoken-price';
 import log from './log';
 import config from './config';
+import {getProfit} from "./getProfit";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -31,13 +32,14 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens) {
   return async function arbitrage(pair: ArbitragePair) {
     const [pair0, pair1] = pair.pairs;
 
-    let res: [BigNumber, string] & {
+    let res: {
       profit: BigNumber;
       baseToken: string;
     };
     // get gross profit based on current state of DEXes
     try {
-      res = await flashBot.getProfit(pair0, pair1);
+      // res = await flashBot.getProfit(pair0, pair1);
+      res = await getProfit(pair0, pair1)
       log.debug(`Profit on ${pair.symbols}: ${ethers.utils.formatEther(res.profit)}`);
     } catch (err) {
       log.debug(err);

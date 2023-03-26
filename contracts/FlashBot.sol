@@ -126,11 +126,8 @@ contract FlashBot is Ownable {
         )
     {
         require(pool0 != pool1, 'Same pair address');
-        console.log('Pool addresses: %s, %s', pool0, pool1);
         (address pool0Token0, address pool0Token1) = (IUniswapV2Pair(pool0).token0(), IUniswapV2Pair(pool0).token1());
-        console.log('Pool token 1,2 addresses: %s, %s', pool0Token0, pool0Token1);
         (address pool1Token0, address pool1Token1) = (IUniswapV2Pair(pool1).token0(), IUniswapV2Pair(pool1).token1());
-        console.log('Pool token 3,4 addresses: %s, %s', pool1Token0, pool1Token1);
         require(pool0Token0 < pool0Token1 && pool1Token0 < pool1Token1, 'Non standard uniswap AMM pair'); // https://docs.uniswap.org/contracts/v2/reference/smart-contracts/pair#token0
         require(pool0Token0 == pool1Token0 && pool0Token1 == pool1Token1, 'Require same token pair');
         require(baseTokensContains(pool0Token0) || baseTokensContains(pool0Token1), 'No base token in pair');
@@ -155,8 +152,9 @@ contract FlashBot is Ownable {
             OrderedReserves memory orderedReserves
         )
     {
-        (uint256 pool0Reserve0, uint256 pool0Reserve1, ) = IUniswapV2Pair(pool0).getReserves();
-        (uint256 pool1Reserve0, uint256 pool1Reserve1, ) = IUniswapV2Pair(pool1).getReserves();
+        // get the reserves
+        (uint256 pool0Reserve0, uint256 pool0Reserve1, ) = IUniswapV2Pair(pool0).getReserves(); // 30 ETH, 1200 USDT -> 1:40
+        (uint256 pool1Reserve0, uint256 pool1Reserve1, ) = IUniswapV2Pair(pool1).getReserves(); // 30 ETH, 900 UST -> 1:30
 
         // Calculate the price denominated in quote asset token
         (Decimal.D256 memory price0, Decimal.D256 memory price1) =

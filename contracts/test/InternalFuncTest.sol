@@ -93,4 +93,25 @@ contract InternalFuncTest is FlashBotDev {
     ) {
         (baseSmaller, baseToken, quoteToken) = isbaseTokenSmaller(pool0, pool1);
     }
+
+    function _estimateGasCostArbitrage(address pool0, address pool1) public returns (uint256) {
+        return estimateGasCostArbitrage(pool0, pool1);
+    }
+
+    function _getOrderedReserves(
+        address pool0,
+        address pool1,
+        bool baseTokenSmaller
+    )
+    public
+    view
+    returns (
+        address poolWithLowerPrice,
+        address poolWithHigherPrice,
+        OrderedReserves memory orderedReserves
+    )
+    {
+        (poolWithLowerPrice, poolWithHigherPrice, orderedReserves) =
+            getOrderedReserves(pool0, pool1, baseTokenSmaller);
+    }
 }

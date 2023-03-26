@@ -4,6 +4,7 @@ import { expect } from 'chai';
 import { ethers, waffle } from 'hardhat';
 import { FlashBot } from '../typechain/FlashBot';
 import { IWETH } from '../typechain/IWETH';
+import {getProfit} from "../bot/getProfit";
 
 describe('Flashswap', () => {
   let weth: IWETH;
@@ -47,8 +48,26 @@ describe('Flashswap', () => {
 
   describe('flash swap arbitrage', () => {
 
+    // TODO: flaky tests (order matters since blockchain state gets reused); needs fix;
+    it('calculate how much profit we get', async () => {
+      // transfer 100000 to mdex pair
+      const amountEth = ethers.utils.parseEther('100000');
+      await weth.deposit({ value: amountEth });
+      await weth.transfer(mdexPairAddr, amountEth);
+      await mdexPair.connect(signer).sync();
+
+      const res = await getProfit(mdexPairAddr, pancakePairAddr);
+      console.log(res)
+      expect(res.profit).to.be.gt(ethers.utils.parseEther('1843'));
+      expect(res.baseToken).to.be.eq(WBNB);
+    });
+
     it('do flash swap between Pancake and MDEX', async () => {
       // transfer 100000 to mdex pair
+      // TODO:
+      //   missalignment with getProfit and arbitrage console.log since deposits somehow carry over the tests;
+      //   In case you comment out the deposit, getProfit() == profit gained in flashArbitrage;
+      //   needs fix;
       const amountEth = ethers.utils.parseEther('100000');
       await weth.deposit({ value: amountEth });
       await weth.transfer(mdexPairAddr, amountEth);
@@ -60,19 +79,6 @@ describe('Flashswap', () => {
 
       expect(balanceAfter).to.be.gt(balanceBefore);
 
-    });
-
-    it('calculate how much profit we get', async () => {
-      // transfer 100000 to mdex pair
-      const amountEth = ethers.utils.parseEther('100000');
-      await weth.deposit({ value: amountEth });
-      await weth.transfer(mdexPairAddr, amountEth);
-      await mdexPair.connect(signer).sync();
-
-      const res = await flashBot.getProfit(mdexPairAddr, pancakePairAddr);
-      console.log(res)
-      expect(res.profit).to.be.gt(ethers.utils.parseEther('80'));
-      expect(res.baseToken).to.be.eq(WBNB);
     });
 
     it('revert if callback is called from address without permission', async () => {
