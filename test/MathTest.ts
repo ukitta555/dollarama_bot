@@ -2,9 +2,9 @@ import lodash from 'lodash';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { InternalFuncTest } from '../typechain/InternalFuncTest';
-import {calculateBorrowAmount} from "../bot/getProfit";
 import {OrderedReserves} from "../bot/types";
 import BigNumberPrecise from "bignumber.js";
+import {calculateBorrowAmount} from "../bot/utils";
 
 const { BigNumber } = ethers;
 

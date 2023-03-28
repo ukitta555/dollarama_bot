@@ -3,7 +3,7 @@ import {ethers, waffle} from "hardhat";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {Contract} from "@ethersproject/contracts";
 import {expect} from "chai";
-import {getOrderedReserves, isBaseTokenSmallerWeb3} from "../bot/getProfit";
+import {getOrderedReserves, isBaseTokenSmallerWeb3} from "../bot/utils";
 
 describe("Helper Functions", () => {
     let weth: IWETH;

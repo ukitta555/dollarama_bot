@@ -116,18 +116,18 @@ describe('GasUsage', () => {
     //   });
     // });
 
-    describe("Arbitrage function", async () => {
-        it("current implementation", async () => {
-            const amountEth = ethers.utils.parseEther('100000');
-            await weth.deposit({ value: amountEth });
-            await weth.transfer(mdexPairAddr, amountEth);
-            await mdexPair.connect(signer).sync();
-
-            const gases = []
-            const gas = await flashBot.callStatic._estimateGasCostArbitrage(mdexPairAddr, pancakePairAddr);
-            console.log("Gas used: ", gas);
-            expect(true);
-        })
-    })
+    // describe("Arbitrage function", async () => {
+    //     it("current implementation", async () => {
+    //         const amountEth = ethers.utils.parseEther('100000');
+    //         await weth.deposit({ value: amountEth });
+    //         await weth.transfer(mdexPairAddr, amountEth);
+    //         await mdexPair.connect(signer).sync();
+    //
+    //         const gases = []
+    //         const gas = await flashBot.callStatic._estimateGasCostArbitrage(mdexPairAddr, pancakePairAddr);
+    //         console.log("Gas used: ", gas);
+    //         expect(true);
+    //     })
+    // })
 });
   

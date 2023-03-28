@@ -10,3 +10,4 @@ typechain
 .secret.ts
 
 .idea
+coverage

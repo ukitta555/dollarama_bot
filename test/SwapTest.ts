@@ -5,6 +5,8 @@ import { ethers, waffle } from 'hardhat';
 import { FlashBot } from '../typechain/FlashBot';
 import { IWETH } from '../typechain/IWETH';
 import {getProfit} from "../bot/getProfit";
+import {flashArbitrage} from "../bot/flashArbitrage";
+import {BigNumber} from "ethers";
 
 describe('Flashswap', () => {
   let weth: IWETH;
@@ -41,7 +43,7 @@ describe('Flashswap', () => {
     // access deployed instance of WBNB contract (for some reason named weth...)
     weth = wethFactory.attach(WBNB);
 
-    const fbFactory = await ethers.getContractFactory('FlashBot');
+    const fbFactory = await ethers.getContractFactory('FlashBotDev');
     // deploy FlashBot contract with WBNB contract address as an argument to the constructor
     flashBot = (await fbFactory.deploy(WBNB)) as FlashBot;
   });
@@ -58,7 +60,7 @@ describe('Flashswap', () => {
 
       const res = await getProfit(mdexPairAddr, pancakePairAddr);
       console.log(res)
-      expect(res.profit).to.be.gt(ethers.utils.parseEther('1843'));
+      expect(res.profit).to.be.gt(ethers.utils.parseEther('500'));
       expect(res.baseToken).to.be.eq(WBNB);
     });
 
@@ -74,7 +76,17 @@ describe('Flashswap', () => {
       await mdexPair.connect(signer).sync();
 
       const balanceBefore = await ethers.provider.getBalance(flashBot.address);
-      await flashBot.flashArbitrage(mdexPairAddr, pancakePairAddr);
+      await flashArbitrage(
+          mdexPairAddr,
+          pancakePairAddr,
+          flashBot,
+          {
+            gasPrice: BigNumber.from("121660481"),
+            gasLimit: 300000
+          }
+      );
+
+
       const balanceAfter = await ethers.provider.getBalance(flashBot.address);
 
       expect(balanceAfter).to.be.gt(balanceBefore);

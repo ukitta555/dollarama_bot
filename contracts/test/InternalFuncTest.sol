@@ -7,10 +7,10 @@ import '../FlashBot_dev.sol';
 contract InternalFuncTest is FlashBotDev {
     constructor(address _WETH) FlashBotDev(_WETH) {}
 
-    function _calcBorrowAmount(OrderedReserves memory reserves) public pure returns (uint256) {
-        return calcBorrowAmount(reserves);
-    }
-
+//    function _calcBorrowAmount(OrderedReserves memory reserves) public pure returns (uint256) {
+//        return calcBorrowAmount(reserves);
+//    }
+//
     function _calcSolutionForQuadratic(
         int256 a,
         int256 b,
@@ -83,35 +83,35 @@ contract InternalFuncTest is FlashBotDev {
         return estimateGasCostABDK2(a, b, c);
     }
 
-    function _isbaseTokenSmaller(address pool0, address pool1)
-    public
-    view
-    returns (
-        bool baseSmaller,
-        address baseToken,
-        address quoteToken
-    ) {
-        (baseSmaller, baseToken, quoteToken) = isbaseTokenSmaller(pool0, pool1);
-    }
-
-    function _estimateGasCostArbitrage(address pool0, address pool1) public returns (uint256) {
-        return estimateGasCostArbitrage(pool0, pool1);
-    }
-
-    function _getOrderedReserves(
-        address pool0,
-        address pool1,
-        bool baseTokenSmaller
-    )
-    public
-    view
-    returns (
-        address poolWithLowerPrice,
-        address poolWithHigherPrice,
-        OrderedReserves memory orderedReserves
-    )
-    {
-        (poolWithLowerPrice, poolWithHigherPrice, orderedReserves) =
-            getOrderedReserves(pool0, pool1, baseTokenSmaller);
-    }
+//    function _isbaseTokenSmaller(address pool0, address pool1)
+//    public
+//    view
+//    returns (
+//        bool baseSmaller,
+//        address baseToken,
+//        address quoteToken
+//    ) {
+//        (baseSmaller, baseToken, quoteToken) = isbaseTokenSmaller(pool0, pool1);
+//    }
+//
+////    function _estimateGasCostArbitrage(address pool0, address pool1) public returns (uint256) {
+////        return estimateGasCostArbitrage(pool0, pool1);
+////    }
+//
+//    function _getOrderedReserves(
+//        address pool0,
+//        address pool1,
+//        bool baseTokenSmaller
+//    )
+//    public
+//    view
+//    returns (
+//        address poolWithLowerPrice,
+//        address poolWithHigherPrice,
+//        OrderedReserves memory orderedReserves
+//    )
+//    {
+//        (poolWithLowerPrice, poolWithHigherPrice, orderedReserves) =
+//            getOrderedReserves(pool0, pool1, baseTokenSmaller);
+//    }
 }

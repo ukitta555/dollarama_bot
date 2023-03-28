@@ -13,7 +13,15 @@ const BSC_RPC = 'https://wider-omniscient-forest.bsc.discover.quiknode.pro/ad295
 const BSC_Tetsnet_RPC = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
 
 const config: HardhatUserConfig = {
-  solidity: { version: '0.8.7' },
+  solidity: {
+    version: '0.8.7',
+    // settings: {
+    //   optimizer: {
+    //     enabled: true,
+    //     runs: 200
+    //   }
+    // }
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
@@ -26,6 +34,7 @@ const config: HardhatUserConfig = {
       accounts: {
         accountsBalance: '1000000000000000000000000', // 1 mil ether
       },
+
     },
     // bscTestnet: {
     //   url: BSC_Tetsnet_RPC,
@@ -45,6 +54,8 @@ const config: HardhatUserConfig = {
     currency: 'CAD',
     outputFile: 'test.txt',
     noColors: true,
+    coinmarketcap: "bc78d32a-76e5-4ba8-8441-ab42d2f9bebd",
+    token: "BNB",
   }
 };
 

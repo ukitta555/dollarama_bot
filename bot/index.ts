@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import { BigNumber } from 'ethers';
+import {BigNumber, ContractReceipt, ContractTransaction} from 'ethers';
 import pool from '@ricokahler/pool';
 import AsyncLock from 'async-lock';
 
@@ -9,6 +9,7 @@ import { getBnbPrice } from './basetoken-price';
 import log from './log';
 import config from './config';
 import {getProfit} from "./getProfit";
+import {flashArbitrage} from "./flashArbitrage";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,11 +60,15 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens) {
       try {
         // lock to prevent tx nonce overlap
         await lock.acquire('flash-bot', async () => {
-          const response = await flashBot.flashArbitrage(pair0, pair1, {
-            gasPrice: config.gasPrice,
-            gasLimit: config.gasLimit,
-          });
-          const receipt = await response.wait(1);
+          const response: ContractTransaction = await flashArbitrage(
+              pair0,
+              pair1,
+              flashBot,
+              {
+                gasPrice: config.gasPrice,
+                gasLimit: config.gasLimit,
+              });
+          const receipt: ContractReceipt = await response.wait(1);
           log.info(`Tx: ${receipt.transactionHash}`);
         });
       } catch (err) {
