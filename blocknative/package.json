@@ -1,0 +1,10 @@
+{
+    "type": "module",
+    "dependencies": {
+        "alchemy-sdk": "^2.6.2",
+        "bnc-sdk": "^4.6.7",
+        "console-stamp": "^3.1.1",
+        "ethers": "^6.2.3",
+        "json-bigint": "^1.0.0"
+    }
+}
