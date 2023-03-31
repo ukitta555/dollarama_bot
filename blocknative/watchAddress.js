@@ -58,11 +58,6 @@ let extractReserveChanges = (ev, pairAddress, token0Address, token1Address) => {
 }
 
 let handleEvent = (ev, pairAddress, pairinfo, log = true) => {
-  // Serialize events as JSON into file "events.json"
-  let events = JSON.parse(fs.readFileSync("events.json"))
-  events.push(ev)
-  fs.writeFileSync("events.json", JSON.stringify(events, null, 2))
-
   // Handle simulated transactions
   if (ev.eventCode == "txPoolSimulation") {
     if (log) console.log(`${(new Date()).toTimeString()} Simulated transaction: ${ev.hash}`)
