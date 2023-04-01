@@ -19,8 +19,8 @@ export async function getProfit(pool0: string, pool1: string,
         profit: BigNumber;
         baseToken: string;
     }> {
-    const { isBaseTokenSmaller, baseToken, quoteToken } = await isBaseTokenSmallerWeb3(pool0, pool1);
-    const { lowerPricePool, higherPricePool, orderedReserves }: OrderedReservesEnhanced = await getOrderedReserves(pool0, pool1, isBaseTokenSmaller);
+    const { isBaseTokenSmaller, baseToken, quoteToken } = await isBaseTokenSmallerFunc(pool0, pool1);
+    const { lowerPricePool, higherPricePool, orderedReserves }: OrderedReservesEnhanced = await getOrderedReservesFunc(pool0, pool1, isBaseTokenSmaller);
     console.log(`Lower price pool address: ${lowerPricePool}`)
     console.log(`Higher price pool address: ${higherPricePool}`)
 
