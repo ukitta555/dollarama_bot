@@ -19,9 +19,9 @@ let logReserves = (localReserves, actualReserves) => {
 }
 
 let main = async () => {
-  const sushipair = "0x06da0fd433C1A5d7a4faa01111c044910A184553"
+  const sushipair = "0xd326C8610490Fdb448e24487D42f3cD2C38CB1b5"
 
-  let pairInfo = await getSushiSwapInfo(sushipair);
+  let pairInfo = await getSushiSwapInfo(sushipair, "goerli");
   let reserves = {}
   reserves[pairInfo.token0] = pairInfo.reserves[0]
   reserves[pairInfo.token1] = pairInfo.reserves[1]
@@ -30,14 +30,14 @@ let main = async () => {
   console.log(reserves)
 
   initializeFiles()
-  watchAddress(sushipair, (reserveChanges) => {
-    reserves[pairInfo.token0] = reserves[pairInfo.token0] + BigInt(reserveChanges[pairInfo.token0])
-    reserves[pairInfo.token1] = reserves[pairInfo.token1] + BigInt(reserveChanges[pairInfo.token1])
-  })
+  watchAddress(sushipair, (reserveChanges, address) => {
+    reserves[pairInfo.token0] = reserves[pairInfo.token0] + BigInt(reserveChanges.get(pairInfo.token0))
+    reserves[pairInfo.token1] = reserves[pairInfo.token1] + BigInt(reserveChanges.get(pairInfo.token1))
+  }, "goerli")
 
   // Check smart contract reserves every 30 seconds and compare against local reserves, logging the difference to console
   setInterval(async () => {
-    let pairInfo = await getSushiSwapInfo(sushipair)
+    let pairInfo = await getSushiSwapInfo(sushipair, "goerli")
     console.log((new Date()).toTimeString())
     let actualReserves = {}
     actualReserves[pairInfo.token0] = pairInfo.reserves[0]

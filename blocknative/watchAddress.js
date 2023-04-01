@@ -25,7 +25,8 @@ let logEvent = (ev) => {
 
 const options = {
   dappId: '92377822-5a39-4cbd-b618-c43972b70d2c',
-  networkId: 1, // Ethereum Mainnet Network
+  networkId: 5, // Goerli Testnet Network
+  // networkId: 1, // Ethereum Mainnet Network
   // networkId: 137, // Polygon Matic Mainnet Network
   // networkId: 80001, // Polygon Mumbai Testnet Network
   system: 'ethereum', // optional, defaults to ethereum
@@ -95,7 +96,7 @@ let handleEvent = (ev, pairAddress, pairinfo, log = true) => {
 }
 
 // Watch for events on specific address, call callback using reserve changes
-let watchAddress = async (address, callback, log = true) => {
+let watchAddress = async (address, callback, network = "homestead", log = true) => {
   // initialize and connect to the api
   const blocknative = new BlocknativeSdk(options)
 
@@ -108,7 +109,7 @@ let watchAddress = async (address, callback, log = true) => {
   if (log) console.log(`Watching: ${details.address}`)
 
   // Get info
-  let pairInfo = await getSushiSwapInfo(address);
+  let pairInfo = await getSushiSwapInfo(address, network);
 
   // Register event listener, call callback with reserve changes
   emitter.on("all", ev => {
