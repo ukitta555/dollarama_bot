@@ -113,10 +113,10 @@ let watchAddress = async (address, callback, log = true) => {
   // Register event listener, call callback with reserve changes
   emitter.on("all", ev => {
     let { token0change, token1change } = handleEvent(ev, address, pairInfo, log);
-    let changesObj = {}
-    changesObj[pairInfo.token0] = token0change
-    changesObj[pairInfo.token1] = token1change
-    callback(changesObj)
+    let changesObj = new Map
+    changesObj.set(pairInfo.token0, token0change)
+    changesObj.set(pairInfo.token1, token1change)
+    callback(changesObj, address)
   })
 }
 
