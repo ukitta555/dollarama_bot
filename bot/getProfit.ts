@@ -1,15 +1,26 @@
-import {BigNumber} from "ethers";
-import {OrderedReservesEnhanced} from "./types";
-import {calculateBorrowAmount, getAmountIn, getAmountOut, getOrderedReserves, isBaseTokenSmallerWeb3} from "./utils";
+import { BigNumber } from "ethers";
+import { OrderedReservesEnhanced } from "./types";
+import { calculateBorrowAmount, getAmountIn, getAmountOut, getOrderedReserves, isBaseTokenSmallerWeb3 } from "./utils";
 import BigNumberPrecise from "bignumber.js";
 
 
-export async function getProfit(pool0: string, pool1: string): Promise<{
-    profit: BigNumber;
-    baseToken: string;
-}> {
-    const {isBaseTokenSmaller, baseToken, quoteToken} = await isBaseTokenSmallerWeb3(pool0, pool1);
-    const {lowerPricePool, higherPricePool, orderedReserves}: OrderedReservesEnhanced = await getOrderedReserves(pool0, pool1, isBaseTokenSmaller);
+export async function getProfit(pool0: string, pool1: string,
+    isBaseTokenSmallerFunc:
+        (pool0: string, pool1: string) =>
+            Promise<{
+                isBaseTokenSmaller: boolean,
+                baseToken: string,
+                quoteToken: string
+            }>,
+    getOrderedReservesFunc:
+        (pool0: string, pool1: string, isBaseTokenSmaller: boolean) =>
+            Promise<OrderedReservesEnhanced> ):
+    Promise<{
+        profit: BigNumber;
+        baseToken: string;
+    }> {
+    const { isBaseTokenSmaller, baseToken, quoteToken } = await isBaseTokenSmallerWeb3(pool0, pool1);
+    const { lowerPricePool, higherPricePool, orderedReserves }: OrderedReservesEnhanced = await getOrderedReserves(pool0, pool1, isBaseTokenSmaller);
     console.log(`Lower price pool address: ${lowerPricePool}`)
     console.log(`Higher price pool address: ${higherPricePool}`)
 
