@@ -10,7 +10,7 @@ import config from "../config";
 import { ethers } from "hardhat";
 
 const WatchCallback = (reserves: Map<string, Pool>, tokensToPairs: Map<string[], Pool[]>, changes: ReserveUpdate, pool_address: string,
-                       flashBot: FlashBot, baseTokens: Tokens, ) => {
+                       flashBot: FlashBot, baseTokens: Tokens) => {
   let pool = reserves.get(pool_address);
   if (pool == undefined) {
     return -1
@@ -48,7 +48,7 @@ let main = async (pool_addresses: string[], network = "homestead") => {
     })
 
     watchAddress(pool, (reserveChanges, address) => {
-      WatchCallback(reservesMap, tokensToPairs, reserveChanges, address, )
+      WatchCallback(reservesMap, tokensToPairs, reserveChanges, address, flashBot, baseTokens)
     }, network)
 
     let tokensSorted = [pool.token0Address, pool.token1Address]
