@@ -5,7 +5,7 @@ const watchAddressTest = async (address, callback) => {
     changes.set('btc', 1)
     changes.set('usd', 1)
     callback(changes, address);
-    console.log(reserves)
+    console.log(reserves_example)
     }, 2000)
     }
     
@@ -14,11 +14,11 @@ const reserves_example = new Map//<string, Map<string, number>>;
 const pair1 = new Map
 pair1.set('btc', BigInt(0))
 pair1.set('usd', BigInt(0))
-reserves_example.set('pool', p1)
+reserves_example.set('pool', pair1)
 console.log(reserves_example)
     
 const WatchCallback = (changes, pool_address) => {
-    const pair = new Map
+    let pair = new Map
     if (reserves_example.has(pool_address)){
         pair = reserves_example.get(pool_address);
     }
