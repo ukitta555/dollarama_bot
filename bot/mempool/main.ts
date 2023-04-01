@@ -48,7 +48,7 @@ let main = async (pool_addresses: string[], network = "homestead") => {
     })
 
     watchAddress(pool, (reserveChanges, address) => {
-      WatchCallback(reservesMap, tokensToPairs, reserveChanges, address, flashBot, baseTokens)
+      WatchCallback(reservesMap, tokensToPairs, reserveChanges, address, )
     }, network)
 
     let tokensSorted = [pool.token0Address, pool.token1Address]
