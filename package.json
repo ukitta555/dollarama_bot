@@ -5,8 +5,9 @@
   "license": "MIT",
   "scripts": {
     "prettier": "prettier --write 'contracts/**/*.sol'",
-    "bot": "hardhat run --network bsc bot/index.ts",
+    "bot": "hardhat run --network goerli bot/index.ts",
     "test": "hardhat test",
+    "test_swap": "hardhat test  test/SwapTest.ts ",
     "test_helpers": "hardhat test test/HelperFunctionsTest.ts",
     "test_gas": "hardhat test test/GasUsageTest.ts"
   },

@@ -1,8 +1,9 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-interface IWETH {
-    function deposit() external payable;
-    function transfer(address to, uint value) external returns (bool);
-    function withdraw(uint) external;
+abstract contract IWETH {
+    mapping (address => uint)                       public  balanceOf;
+    function deposit() virtual external payable;
+    function transfer(address to, uint value) virtual external returns (bool);
+    function withdraw(uint) virtual external;
 }

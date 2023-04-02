@@ -128,16 +128,15 @@ contract FlashBotDev is Ownable {
         // this must be updated every transaction for callback origin authentication
         permissionedPairAddress = lowerPool; // lower price pair
         uint256 balanceBefore = IERC20(baseToken).balanceOf(address(this));
-
         // borrowing (flash swap) happens here -> will callback to UniswapV2Call
         IUniswapV2Pair(lowerPool).swap(amount0Out, amount1Out, address(this), data);
         uint256 balanceAfter = IERC20(baseToken).balanceOf(address(this));
 
         require(balanceAfter > balanceBefore, 'Losing money');
 
-        if (baseToken == WETH) {
-            IWETH(baseToken).withdraw(balanceAfter);
-        }
+//        if (baseToken == WETH) {
+//            IWETH(baseToken).withdraw(balanceAfter);
+//        }
 
         permissionedPairAddress = address(1);
     }

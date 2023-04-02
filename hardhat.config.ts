@@ -4,48 +4,47 @@ import '@nomiclabs/hardhat-waffle';
 import "hardhat-gas-reporter";
 
 import 'solidity-coverage'
-// import deployer from './.secret';
+import deployer from './.secret';
 
-// const BSC_RPC = 'https://bsc-dataseed.binance.org/';
-// const BSC_RPC = 'https://bsc-dataseed1.defibit.io/';
-// const BSC_RPC = 'https://bsc.getblock.io/ab08db7c-9c49-48a9-bc8c-21744655788e/mainnet/'
 const BSC_RPC = 'https://wider-omniscient-forest.bsc.discover.quiknode.pro/ad2953eb92cef2ef0a576ee02eceea96ed5e1942/'
-const BSC_Tetsnet_RPC = 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+const ETH_GOERLI_RPC = 'https://eth-goerli.g.alchemy.com/v2/o9kpx9zHcF3Dk97O3TA34fhvh9vk_FKQ'
 
+// Goerli UniswapV2 factory:
+// https://goerli.etherscan.io/address/0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f#readContract
 const config: HardhatUserConfig = {
   solidity: {
     version: '0.8.7',
-    // settings: {
-    //   optimizer: {
-    //     enabled: true,
-    //     runs: 200
-    //   }
-    // }
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
   },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
       // loggingEnabled: true,
       forking: {
-        url: BSC_RPC,
+        url: ETH_GOERLI_RPC,
         enabled: true,
-        blockNumber: 26646850
+        blockNumber: 8757745
       },
       accounts: {
         accountsBalance: '1000000000000000000000000', // 1 mil ether
       },
 
     },
-    // bscTestnet: {
-    //   url: BSC_Tetsnet_RPC,
-    //   chainId: 0x61,
-    //   accounts: [deployer.private],
-    // },
-    // bsc: {
-    //   url: BSC_RPC,
-    //   chainId: 0x38,
-    //   accounts: [deployer.private],
-    // },
+    goerli: {
+      allowUnlimitedContractSize: true,
+      url: ETH_GOERLI_RPC,
+      accounts: [deployer.private],
+      forking: {
+        url: ETH_GOERLI_RPC,
+        enabled: true,
+        blockNumber: 8757745,
+      }
+    }
   },
   mocha: {
     timeout: 40000,

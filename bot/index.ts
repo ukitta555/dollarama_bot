@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat';
-import {BigNumber, ContractReceipt, ContractTransaction} from 'ethers';
+import {BigNumber, ContractReceipt, ContractTransaction, utils} from 'ethers';
 import pool from '@ricokahler/pool';
 import AsyncLock from 'async-lock';
 
@@ -19,13 +19,15 @@ function sleep(ms: number) {
 
 async function calcNetProfit(profitWei: BigNumber, address: string, baseTokens: Tokens): Promise<number> {
   let price = 1;
-  if (baseTokens.wbnb.address == address) {
+  if (baseTokens.weth_fabian.address == address) {
     price = await getBnbPrice();
   }
   let profit = parseFloat(ethers.utils.formatEther(profitWei));
   profit = profit * price;
 
-  const gasCost = price * parseFloat(ethers.utils.formatEther(config.gasPrice)) * (config.gasLimit as number);
+  // const gasCost = price * parseFloat(ethers.utils.formatEther(config.gasPrice)) * (config.gasLimit as number);
+  const gasCost = 0
+  log.debug(`${profit}, ${gasCost} `)
   return profit - gasCost;
 }
 
@@ -53,6 +55,7 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens,
     try {
       // res = await flashBot.getProfit(pair0, pair1);
       res = await getProfit(pair0, pair1, isBaseTokenSmallerFunc, getOrderedReservesFunc)
+      // console.log(`Profit on ${pair.symbols}: ${ethers.utils.formatEther(res.profit)}`)
       log.debug(`Profit on ${pair.symbols}: ${ethers.utils.formatEther(res.profit)}`);
     } catch (err) {
       log.debug(err);
@@ -62,6 +65,7 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens,
     if (res.profit.gt(BigNumber.from('0'))) {
       // account for gas
       const netProfit = await calcNetProfit(res.profit, res.baseToken, baseTokens);
+      log.debug(`Net profit: ${netProfit}`)
       // in case the net profit is less than we want it to be, we have to abort
       if (netProfit < config.minimumProfit) {
         return;
@@ -79,8 +83,9 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens,
               {
                 gasPrice: config.gasPrice,
                 gasLimit: config.gasLimit,
+                // nonce: 39
               });
-          const receipt: ContractReceipt = await response.wait(1);
+          const receipt: ContractReceipt = await response.wait();
           log.info(`Tx: ${receipt.transactionHash}`);
         });
       } catch (err) {
@@ -94,9 +99,9 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens,
 }
 
 async function main() {
-  const pairs = await tryLoadPairs(Network.BSC);
-  const flashBot = (await ethers.getContractAt('FlashBot', config.contractAddr)) as FlashBot;
-  const [baseTokens] = getTokens(Network.BSC);
+  const pairs = await tryLoadPairs(Network.ETH_TESTNET);
+  const flashBot = (await ethers.getContractAt('FlashBotDev', config.contractAddr)) as FlashBot;
+  const [baseTokens] = getTokens(Network.ETH_TESTNET);
 
   log.info('Start arbitraging');
   while (true) {
@@ -109,13 +114,11 @@ async function main() {
   }
 }
 
-/*
 main()
   .then(() => process.exit(0))
   .catch((err) => {
     log.error(err);
     process.exit(1);
   });
-*/
 
 export {arbitrageFunc}

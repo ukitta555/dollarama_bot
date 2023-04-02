@@ -1,15 +1,13 @@
 import { ethers, run } from 'hardhat';
 
-import deployer from '../.secret';
 import process from 'node:process';
 
-// WBNB address on BSC, WETH address on ETH
-const WethAddr = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+const baseTokenAddr: string = '0x1869686c24b3B525A66bDa0866Ab5773B75BdF8a';
 
 async function main() {
   await run('compile');
-  const FlashBot = await ethers.getContractFactory('FlashBot');
-  const flashBot = await FlashBot.deploy(WethAddr);
+  const FlashBot = await ethers.getContractFactory('FlashBotDev');
+  const flashBot = await FlashBot.deploy(baseTokenAddr);
 
   console.log(`FlashBot deployed to ${flashBot.address}`);
 }

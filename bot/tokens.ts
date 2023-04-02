@@ -9,6 +9,7 @@ import log from './log';
 
 export enum Network {
   BSC = 'bsc',
+  ETH_TESTNET = 'eth-testnet'
 }
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -86,10 +87,32 @@ const bscDexes: AmmFactories = {
   // value: '0x1B8E12F839BD4e73A47adDF76cF7F0097d74c14C',
 };
 
+const ethTestnetBaseTokens: Tokens = {
+  weth_fabian: {
+    symbol: "WETH_FAB",
+    address:"0x1869686c24b3B525A66bDa0866Ab5773B75BdF8a",
+  }
+}
+
+const ethTestnetQuoteTokens: Tokens = {
+  weth_fabian: {
+    symbol: "WETH_VLD",
+    address: "0x3d289e88330abf26ca555425be12df4c9fa76508",
+  }
+}
+
+const ethTestnetDexes: AmmFactories = {
+  sushiswap: '0xc35DADB65012eC5796536bD9864eD8773aBc74C4',
+  uniswap: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+}
+
+
 function getFactories(network: Network): AmmFactories {
   switch (network) {
     case Network.BSC:
       return bscDexes;
+    case Network.ETH_TESTNET:
+      return ethTestnetDexes;
     default:
       throw new Error(`Unsupported network:${network}`);
   }
@@ -99,6 +122,8 @@ export function getTokens(network: Network): [Tokens, Tokens] {
   switch (network) {
     case Network.BSC:
       return [bscBaseTokens, bscQuoteTokens];
+    case Network.ETH_TESTNET:
+      return [ethTestnetBaseTokens, ethTestnetQuoteTokens]
     default:
       throw new Error(`Unsupported network:${network}`);
   }

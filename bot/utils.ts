@@ -31,7 +31,7 @@ export async function isBaseTokenSmallerWeb3(pool0: string, pool1: string): Prom
         uniswapV2PairPool1.token0(),
         uniswapV2PairPool1.token1(),
     ])
-    console.log(pool0_token0, pool0_token1, pool1_token0, pool1_token1)
+    // console.log(pool0_token0, pool0_token1, pool1_token0, pool1_token1)
 
     if (
         BigNumber.from(pool0_token0).gte(BigNumber.from(pool0_token1))
@@ -73,6 +73,7 @@ export async function getOrderedReserves(
 ): Promise<OrderedReservesEnhanced> {
     const uniswapV2PairPool0 = (await ethers.getContractAt('IUniswapV2Pair', pool0)) as IUniswapV2Pair;
     const uniswapV2PairPool1 = (await ethers.getContractAt('IUniswapV2Pair', pool1)) as IUniswapV2Pair;
+
 
     let [tmpReservesPool0, tmpReservesPool1] = await Promise.all([
         uniswapV2PairPool0.getReserves(),
@@ -214,13 +215,22 @@ export function calculateBorrowAmount(reserves: OrderedReserves): BigNumberPreci
             BigNumberPrecise("2").multipliedBy(a)
         );
 
+    console.log(
+        x1.decimalPlaces(0, 1).toString(),
+        x2.decimalPlaces(0, 1).toString(),
+        b1.decimalPlaces(0, 1).toString(),
+        b2.decimalPlaces(0, 1).toString(),
+        a.decimalPlaces(0, 1).toString(),
+        b.decimalPlaces(0, 1).toString(),
+        c.decimalPlaces(0, 1).toString()
+    )
     // see readme for solution of the resulting system and constraints checked here
-    if (!((x1.isPositive() && x1.lt(b1) && x1.lt(b2)) || (x2.isPositive() && x2.lt(b1) && x2.lt(b2)))) {
+    if (!((x1.isPositive() && x1.lt(b1)) || (x2.isPositive() && x2.lt(b1)))) {
         throw Error("Bad solution!");
     }
 
 
-    if (x1.isPositive() && x1.lt(b1) && x1.lt(b2)) {
+    if (x1.isPositive() && x1.lt(b1)) {
         return x1;
     } else {
         return x2;

@@ -6,15 +6,16 @@ const settings = {
   apiKey: "SFozfa9FHxFP5Yawt9gRu9FmFO05csut",
 };
 
-const privateKey = "c970217e5878f0f67d6fb48cdec202af63cb8f459961e14e2429c8cb1b5689d9"; // no money to be found here you scoundrel
+// no money to be found here you scoundrel
+const privateKey = "c970217e5878f0f67d6fb48cdec202af63cb8f459961e14e2429c8cb1b5689d9";
 
 const contractAbi = JSON.parse(await readFile(new URL("./sushiswap_abi.json", import.meta.url))).result;
 const factoryAbi = JSON.parse(await readFile(new URL("./sushiswap_factory_abi.json", import.meta.url))).result;
 
-let getAllPairs = async (factoryAddess, network = "homestead") => {
+let getAllPairs = async (factoryAddress, network = "homestead") => {
   const alchemyProvider = new ethers.AlchemyProvider(network, settings.apiKey);
   const signer = new ethers.Wallet(privateKey, alchemyProvider);
-  const sushiSwapFactoryContract = new ethers.Contract(factoryAddess, factoryAbi, signer)
+  const sushiSwapFactoryContract = new ethers.Contract(factoryAddress, factoryAbi, signer)
 
   const allPairsLength = await sushiSwapFactoryContract.allPairsLength();
   let allPairs = [];

@@ -23,9 +23,10 @@ export async function getBnbPrice(): Promise<number> {
     if (bnbPrice !== 0) {
       return bnbPrice;
     }
-    const res = await axios.get(config.bscScanUrl);
-    bnbPrice = parseFloat(res.data.result.ethusd);
-    log.info(`BNB price: $${bnbPrice}`);
+    // const res = await axios.get(config.bscScanUrl);
+    // bnbPrice = parseFloat(res.data.result.ethusd);
+    // log.info(`BNB price: $${bnbPrice}`);
+    bnbPrice = 100
     return bnbPrice;
   });
 }

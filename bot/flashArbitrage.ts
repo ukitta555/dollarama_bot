@@ -13,6 +13,7 @@ export async function flashArbitrage(
     config: {
         gasPrice: BigNumber,
         gasLimit: BigNumberish,
+        // nonce: BigNumberish
     }
 ) {
     const {isBaseTokenSmaller, baseToken, quoteToken} = await isBaseTokenSmallerWeb3(pool0, pool1);
@@ -66,12 +67,12 @@ export async function flashArbitrage(
         ['address', 'address', 'bool', 'address', 'address', 'uint256', 'uint256'],
         encodedCallbackArgs
     )
-    console.log(decodedCallbackArgs)
     return await flashBot.flashArbitrage(
         lowerPricePool,
         baseToken,
         amountOut0,
         amountOut1,
         encodedCallbackArgs,
+        config
     )
 }
