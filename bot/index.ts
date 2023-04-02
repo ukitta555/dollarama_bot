@@ -10,6 +10,8 @@ import log from './log';
 import config from './config';
 import {getProfit} from "./getProfit";
 import {flashArbitrage} from "./flashArbitrage";
+import { OrderedReservesEnhanced } from './types';
+import { getOrderedReserves, isBaseTokenSmallerWeb3 } from './utils';
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,7 +30,17 @@ async function calcNetProfit(profitWei: BigNumber, address: string, baseTokens: 
 }
 
 // Promise.all(arbitrageFunc, arbitrageFunc, arbitrageFunc)
-function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens) {
+function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens,
+  isBaseTokenSmallerFunc:
+        (pool0: string, pool1: string) =>
+            Promise<{
+                isBaseTokenSmaller: boolean,
+                baseToken: string,
+                quoteToken: string
+            }>,
+    getOrderedReservesFunc:
+        (pool0: string, pool1: string, isBaseTokenSmaller: boolean) =>
+            Promise<OrderedReservesEnhanced> ) {
   const lock = new AsyncLock({ timeout: 2000, maxPending: 20 });
   return async function arbitrage(pair: ArbitragePair) {
     const [pair0, pair1] = pair.pairs;
@@ -40,7 +52,7 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens) {
     // get gross profit based on current state of DEXes
     try {
       // res = await flashBot.getProfit(pair0, pair1);
-      res = await getProfit(pair0, pair1)
+      res = await getProfit(pair0, pair1, isBaseTokenSmallerFunc, getOrderedReservesFunc)
       log.debug(`Profit on ${pair.symbols}: ${ethers.utils.formatEther(res.profit)}`);
     } catch (err) {
       log.debug(err);
@@ -90,16 +102,20 @@ async function main() {
   while (true) {
     await pool({
       collection: pairs,
-      task: arbitrageFunc(flashBot, baseTokens),
+      task: arbitrageFunc(flashBot, baseTokens, isBaseTokenSmallerWeb3, getOrderedReserves),
       // maxConcurrency: config.concurrency,
     });
     await sleep(1000);
   }
 }
 
+/*
 main()
   .then(() => process.exit(0))
   .catch((err) => {
     log.error(err);
     process.exit(1);
   });
+*/
+
+export {arbitrageFunc}
