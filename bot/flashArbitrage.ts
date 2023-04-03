@@ -5,6 +5,7 @@ import {AbiCoder} from "ethers/lib/utils";
 import config from "./config";
 import {FlashBot} from "../typechain";
 import base = Mocha.reporters.base;
+import { OrderedReservesEnhanced } from "./types";
 
 export async function flashArbitrage(
     pool0: string,
@@ -14,10 +15,20 @@ export async function flashArbitrage(
         gasPrice: BigNumber,
         gasLimit: BigNumberish,
         // nonce: BigNumberish
-    }
+    },
+    isBaseTokenSmallerFunc:
+        (pool0: string, pool1: string) =>
+            Promise<{
+                isBaseTokenSmaller: boolean,
+                baseToken: string,
+                quoteToken: string
+            }>,
+    getOrderedReservesFunc:
+        (pool0: string, pool1: string, isBaseTokenSmaller: boolean) =>
+            Promise<OrderedReservesEnhanced>
 ) {
-    const {isBaseTokenSmaller, baseToken, quoteToken} = await isBaseTokenSmallerWeb3(pool0, pool1);
-    const {lowerPricePool, higherPricePool, orderedReserves} = await getOrderedReserves(pool0, pool1, isBaseTokenSmaller);
+    const {isBaseTokenSmaller, baseToken, quoteToken} = await isBaseTokenSmallerFunc(pool0, pool1);
+    const {lowerPricePool, higherPricePool, orderedReserves} = await getOrderedReservesFunc(pool0, pool1, isBaseTokenSmaller);
     BigNumberPrecise.config({ EXPONENTIAL_AT: 1e+9 })
     const amountToBorrow: BigNumber =
          BigNumber.from(

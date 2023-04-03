@@ -84,7 +84,8 @@ function arbitrageFunc(flashBot: FlashBot, baseTokens: Tokens,
                 gasPrice: config.gasPrice,
                 gasLimit: config.gasLimit,
                 // nonce: 39
-              });
+              },
+              isBaseTokenSmallerFunc, getOrderedReservesFunc);
           const receipt: ContractReceipt = await response.wait();
           log.info(`Tx: ${receipt.transactionHash}`);
         });
