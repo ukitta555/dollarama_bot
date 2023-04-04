@@ -28,7 +28,7 @@ const config: HardhatUserConfig = {
       forking: {
         url: ETH_GOERLI_RPC,
         enabled: true,
-        blockNumber: 8757745
+        blockNumber: 8763725
       },
       accounts: {
         accountsBalance: '1000000000000000000000000', // 1 mil ether
@@ -39,11 +39,6 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       url: ETH_GOERLI_RPC,
       accounts: [deployer.private],
-      forking: {
-        url: ETH_GOERLI_RPC,
-        enabled: true,
-        blockNumber: 8757745,
-      }
     }
   },
   mocha: {

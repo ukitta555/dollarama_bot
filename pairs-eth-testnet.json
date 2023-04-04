@@ -1,9 +1,9 @@
 [
   {
-    "symbols": "WETHFabian-WETHVlad",
+    "symbols": "Token1Demo-Token2Demo",
     "pairs": [
-      "0x7f760152f6A94c3d7806682c8b54d59BC5467900",
-      "0xd326C8610490Fdb448e24487D42f3cD2C38CB1b5"
+      "0xcaF30Af12f5BFb687a50eCeDcC308170DF653F1f",
+      "0x0D4950B94c2aAA7a500A32387d52438a16424070"
     ]
   }
 ]

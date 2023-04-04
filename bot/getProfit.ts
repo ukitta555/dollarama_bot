@@ -1,28 +1,24 @@
 import { BigNumber } from "ethers";
-import { OrderedReservesEnhanced } from "./types";
-import { calculateBorrowAmount, getAmountIn, getAmountOut, getOrderedReserves, isBaseTokenSmallerWeb3 } from "./utils";
+import {getOrderedReservesFuncType, isBaseTokenSmallerFuncType, OrderedReservesEnhanced} from "./types";
+import { calculateBorrowAmount, getAmountIn, getAmountOut } from "./utils";
 import BigNumberPrecise from "bignumber.js";
+import log from "./log";
 
 
-export async function getProfit(pool0: string, pool1: string,
-    isBaseTokenSmallerFunc:
-        (pool0: string, pool1: string) =>
-            Promise<{
-                isBaseTokenSmaller: boolean,
-                baseToken: string,
-                quoteToken: string
-            }>,
-    getOrderedReservesFunc:
-        (pool0: string, pool1: string, isBaseTokenSmaller: boolean) =>
-            Promise<OrderedReservesEnhanced> ):
+export async function getProfit(
+    pool0: string,
+    pool1: string,
+    isBaseTokenSmallerFunc: isBaseTokenSmallerFuncType,
+    getOrderedReservesFunc: getOrderedReservesFuncType,
+):
     Promise<{
         profit: BigNumber;
         baseToken: string;
     }> {
-    const { isBaseTokenSmaller, baseToken, quoteToken } = await isBaseTokenSmallerFunc(pool0, pool1);
-    const { lowerPricePool, higherPricePool, orderedReserves }: OrderedReservesEnhanced = await getOrderedReservesFunc(pool0, pool1, isBaseTokenSmaller);
-    console.log(`Lower price pool address: ${lowerPricePool}`)
-    console.log(`Higher price pool address: ${higherPricePool}`)
+    const { isBaseTokenSmaller, baseToken} = await isBaseTokenSmallerFunc(pool0, pool1);
+    const { orderedReserves }: OrderedReservesEnhanced = await getOrderedReservesFunc(pool0, pool1, isBaseTokenSmaller);
+    // console.log(`Lower price pool address: ${lowerPricePool}`)
+    // console.log(`Higher price pool address: ${higherPricePool}`)
 
     // for conversion from precise to non-precise - I know this is not ideal but it works
     BigNumberPrecise.config({ EXPONENTIAL_AT: 1e+9 })
@@ -55,6 +51,7 @@ export async function getProfit(pool0: string, pool1: string,
         orderedReserves.higherPricePoolBaseToken,
         orderedReserves.higherPricePoolQuoteToken,
     )
+    log.debug(`Gross profit: ${baseTokenGrossProfit.toString()}, debt amount: ${debtAmount.toString()}`)
     if (baseTokenGrossProfit.lt(debtAmount)) {
         return {
             profit: BigNumber.from(0),

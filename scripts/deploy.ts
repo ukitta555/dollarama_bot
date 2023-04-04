@@ -2,7 +2,7 @@ import { ethers, run } from 'hardhat';
 
 import process from 'node:process';
 
-const baseTokenAddr: string = '0x1869686c24b3B525A66bDa0866Ab5773B75BdF8a';
+const baseTokenAddr: string = '0xcaF30Af12f5BFb687a50eCeDcC308170DF653F1f';
 
 async function main() {
   await run('compile');

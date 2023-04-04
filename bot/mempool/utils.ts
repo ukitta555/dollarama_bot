@@ -2,15 +2,17 @@ import { BigNumber } from "ethers";
 import config from "../config";
 import {IUniswapV2Pair} from "../../typechain";
 import BigNumberPrecise from "bignumber.js"
-import { MatchedPoolReserves, OrderedReserves, OrderedReservesEnhanced, PoolReservesShort } from "../types";
+import {
+    isBaseTokenSmallerFuncType,
+    MatchedPoolReserves,
+    OrderedReserves,
+    OrderedReservesEnhanced,
+    PoolReservesShort
+} from "../types";
 import { Pool } from "./types";
 import { divideBigNums } from "../utils";
 
-export function isBaseTokenSmallerLocalReserves(reserves: Map<string, Pool>): (pool0: string, pool1: string) => Promise<{
-    isBaseTokenSmaller: boolean,
-    baseToken: string,
-    quoteToken: string
-}> {
+export function isBaseTokenSmallerLocalReserves(reserves: Map<string, Pool>): isBaseTokenSmallerFuncType {
     return async (pool0: string, pool1: string) => {
         if (pool0 === pool1) {
             throw Error("Error: same pools!");
@@ -63,31 +65,36 @@ export function getOrderedReservesLocalReserves(reserves: Map<string, Pool>): (
         const pool0Reserve = reserves.get(pool0);
         const pool1Reserve = reserves.get(pool1);
 
-        let [tmpReservesPool0, tmpReservesPool1]: PoolReservesShort[] = 
-            [{ reserve0: pool0Reserve!.reserve0, reserve1: pool0Reserve!.reserve1 },
-             { reserve0: pool1Reserve!.reserve0, reserve1: pool1Reserve!.reserve1 }]
-        // console.log(reservesPool0, reservesPool1);
+        let [tmpReservesPool0, tmpReservesPool1]: PoolReservesShort[] = [
+            {
+                _reserve0: pool0Reserve!.reserve0,
+                _reserve1: pool0Reserve!.reserve1
+            },
+            {
+                _reserve0: pool1Reserve!.reserve0,
+                _reserve1: pool1Reserve!.reserve1
+            }]
 
         let reservesPool0: MatchedPoolReserves;
         let reservesPool1: MatchedPoolReserves;
 
         if (isBaseTokenSmaller) {
             reservesPool0 = {
-                baseTokenReserves: tmpReservesPool0.reserve0,
-                quoteTokenReserves: tmpReservesPool0.reserve1
+                baseTokenReserves: tmpReservesPool0._reserve0,
+                quoteTokenReserves: tmpReservesPool0._reserve1
             };
             reservesPool1 = {
-                baseTokenReserves: tmpReservesPool1.reserve0,
-                quoteTokenReserves: tmpReservesPool1.reserve1
+                baseTokenReserves: tmpReservesPool1._reserve0,
+                quoteTokenReserves: tmpReservesPool1._reserve1
             }
         } else {
             reservesPool0 = {
-                baseTokenReserves: tmpReservesPool0.reserve1,
-                quoteTokenReserves: tmpReservesPool0.reserve0
+                baseTokenReserves: tmpReservesPool0._reserve1,
+                quoteTokenReserves: tmpReservesPool0._reserve0
             };
             reservesPool1 = {
-                baseTokenReserves: tmpReservesPool1.reserve1,
-                quoteTokenReserves: tmpReservesPool1.reserve0
+                baseTokenReserves: tmpReservesPool1._reserve1,
+                quoteTokenReserves: tmpReservesPool1._reserve0
             }
         }
         console.log(`Reserves0: ${reservesPool0.baseTokenReserves}, ${reservesPool0.quoteTokenReserves}`)

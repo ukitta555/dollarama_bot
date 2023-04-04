@@ -1,34 +1,29 @@
-import {calculateBorrowAmount, getAmountIn, getAmountOut, getOrderedReserves, isBaseTokenSmallerWeb3} from "./utils";
+import {calculateBorrowAmount, getAmountIn, getAmountOut } from "./utils";
 import BigNumberPrecise from "bignumber.js";
 import {BigNumber, BigNumberish} from "ethers";
 import {AbiCoder} from "ethers/lib/utils";
-import config from "./config";
-import {FlashBot} from "../typechain";
-import base = Mocha.reporters.base;
+import {FlashBotDev} from "../typechain";
+import {getOrderedReservesFuncType, isBaseTokenSmallerFuncType} from "./types";
 import { OrderedReservesEnhanced } from "./types";
 
 export async function flashArbitrage(
+    isBaseTokenSmallerFunc: isBaseTokenSmallerFuncType,
+    getOrderedReservesFunc: getOrderedReservesFuncType,
     pool0: string,
     pool1: string,
-    flashBot: FlashBot,
+    flashBot: FlashBotDev,
     config: {
         gasPrice: BigNumber,
         gasLimit: BigNumberish,
-        // nonce: BigNumberish
-    },
-    isBaseTokenSmallerFunc:
-        (pool0: string, pool1: string) =>
-            Promise<{
-                isBaseTokenSmaller: boolean,
-                baseToken: string,
-                quoteToken: string
-            }>,
-    getOrderedReservesFunc:
-        (pool0: string, pool1: string, isBaseTokenSmaller: boolean) =>
-            Promise<OrderedReservesEnhanced>
+        // nonce: number
+    }
 ) {
     const {isBaseTokenSmaller, baseToken, quoteToken} = await isBaseTokenSmallerFunc(pool0, pool1);
-    const {lowerPricePool, higherPricePool, orderedReserves} = await getOrderedReservesFunc(pool0, pool1, isBaseTokenSmaller);
+    const {lowerPricePool, higherPricePool, orderedReserves} = await getOrderedReservesFunc(
+        pool0,
+        pool1,
+        isBaseTokenSmaller
+    );
     BigNumberPrecise.config({ EXPONENTIAL_AT: 1e+9 })
     const amountToBorrow: BigNumber =
          BigNumber.from(
@@ -51,16 +46,9 @@ export async function flashArbitrage(
         throw Error("Error: arbitrage fail, no profit!");
     }
     console.log(`Profit: ${
-        (
-            baseTokenGrossProfit
-                .sub(debtAmount)
-        )
-            .div(
-                BigNumber
-                    .from("10")
-                    .pow("18")
-            )
+        baseTokenGrossProfit.sub(debtAmount)
     }`)
+
     /*
     address debtPool;
     address targetPool;
@@ -73,10 +61,6 @@ export async function flashArbitrage(
     const encodedCallbackArgs = AbiCoder.prototype.encode(
     ['address', 'address', 'bool', 'address', 'address', 'uint256', 'uint256'],
         [lowerPricePool, higherPricePool, isBaseTokenSmaller, quoteToken, baseToken, debtAmount, baseTokenGrossProfit]
-    )
-    const decodedCallbackArgs = AbiCoder.prototype.decode(
-        ['address', 'address', 'bool', 'address', 'address', 'uint256', 'uint256'],
-        encodedCallbackArgs
     )
     return await flashBot.flashArbitrage(
         lowerPricePool,

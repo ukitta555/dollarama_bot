@@ -89,14 +89,14 @@ const bscDexes: AmmFactories = {
 
 const ethTestnetBaseTokens: Tokens = {
   weth_fabian: {
-    symbol: "WETH_FAB",
-    address:"0x1869686c24b3B525A66bDa0866Ab5773B75BdF8a",
+    symbol: "T1D", // token 1 demo
+    address:"0xcaF30Af12f5BFb687a50eCeDcC308170DF653F1f",
   }
 }
 
 const ethTestnetQuoteTokens: Tokens = {
   weth_fabian: {
-    symbol: "WETH_VLD",
+    symbol: "T2D",
     address: "0x3d289e88330abf26ca555425be12df4c9fa76508",
   }
 }

@@ -10,10 +10,11 @@
 */
 import BlocknativeSdk from 'bnc-sdk'
 import WebSocket from 'ws'
-import { getSushiSwapInfo } from './getSushiSwapInfo'
+import { getInfoFromUniswapBasedContract } from './getInfoFromUniswapBasedContract'
 import fs from 'fs'
 import { Pool, ReserveUpdate } from './types'
 import { BigNumber } from "ethers";
+import undefinedError = Mocha.utils.undefinedError;
 
 let logEvent = (ev: any) => {
   if (!fs.existsSync("events.json")) {
@@ -32,7 +33,8 @@ let networkToChainId: {[key:string]: number} = {
 }
 
 const options = {
-  dappId: '92377822-5a39-4cbd-b618-c43972b70d2c',
+  // dappId: '92377822-5a39-4cbd-b618-c43972b70d2c',
+  dappId: '06f7ebad-3c9c-491a-9215-d2ea72029e28',
   networkId: 5, // Goerli Testnet Network
   // networkId: 1, // Ethereum Mainnet Network
   // networkId: 137, // Polygon Matic Mainnet Network
@@ -50,22 +52,22 @@ let extractReserveChanges = (ev: any, pairAddress: string, token0Address: string
   token0change: BigNumber,
   token1change: BigNumber
 } => {
-  let reserveChanges = ev.netBalanceChanges.filter((change: any) => change.address == pairAddress)[0]
+  let reserveChanges = ev.netBalanceChanges.filter((change: any) => change.address.toLowerCase() === pairAddress.toLowerCase())[0]
 
   if (reserveChanges == undefined) {
     return { token0change: BigNumber.from(0), token1change: BigNumber.from(0) }
   }
 
-  let token0changeObject = reserveChanges.balanceChanges.filter((change: any) => change.asset.contractAddress.toUpperCase() == token0Address.toUpperCase())[0]
-  let token1changeObject = reserveChanges.balanceChanges.filter((change: any) => change.asset.contractAddress.toUpperCase() == token1Address.toUpperCase())[0]
+  let token0changeObject = reserveChanges.balanceChanges.filter((change: any) => change.asset.contractAddress.toUpperCase() === token0Address.toUpperCase())[0]
+  let token1changeObject = reserveChanges.balanceChanges.filter((change: any) => change.asset.contractAddress.toUpperCase() === token1Address.toUpperCase())[0]
 
-  if (token0changeObject == undefined || token1changeObject == undefined) {
-    return { token0change: BigNumber.from(0), token1change: BigNumber.from(0) }
-  }
+  // if (token0changeObject == undefined || token1changeObject == undefined) {
+  //   return { token0change: BigNumber.from(0), token1change: BigNumber.from(0) }
+  // }
 
   // Get balance changes
-  let token0change = BigNumber.from(token0changeObject.delta)
-  let token1change = BigNumber.from(token1changeObject.delta)
+  let token0change = token0changeObject === undefined ?  BigNumber.from(0) : BigNumber.from(token0changeObject.delta);
+  let token1change = token1changeObject === undefined ? BigNumber.from(0) : BigNumber.from(token1changeObject.delta);
   return { token0change, token1change }
 }
 
@@ -126,8 +128,8 @@ let watchAddress = async (pairInfo: Pool, callback: (update: ReserveUpdate, addr
   emitter.on("all", (ev) => {
     let changes = handleEvent(ev, pairInfo, log);
     let update: ReserveUpdate = {
-      token0Address: pairInfo.token0Address,
-      token1Address: pairInfo.token1Address,
+      token0Address: pairInfo.token0Address.toLowerCase(),
+      token1Address: pairInfo.token1Address.toLowerCase(),
       reserve0Delta: changes.token0change,
       reserve1Delta: changes.token1change
     }

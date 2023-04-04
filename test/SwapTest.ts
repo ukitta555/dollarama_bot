@@ -7,13 +7,15 @@ import { IWETH } from '../typechain/IWETH';
 import {getProfit} from "../bot/getProfit";
 import {flashArbitrage} from "../bot/flashArbitrage";
 import {BigNumber, utils} from "ethers";
+import {getOrderedReserves, isBaseTokenSmallerWeb3} from "../bot/utils";
+import {FlashBotDev} from "../typechain";
 
 describe('Flashswap', () => {
   let weth: IWETH;
-  let flashBot: FlashBot;
+  let flashBot: FlashBotDev;
 
-  const fabianCoin = '0x1869686c24b3B525A66bDa0866Ab5773B75BdF8a';
-  const vladCoin = '0x3d289e88330abf26ca555425be12df4c9fa76508';
+  const testCoin1 = '0xcaf30af12f5bfb687a50ecedcc308170df653f1f';
+  const testCoin2 = '0x0D4950B94c2aAA7a500A32387d52438a16424070';
 
   let signer: SignerWithAddress;
 
@@ -31,20 +33,20 @@ describe('Flashswap', () => {
   let sushiswapPairAddr: any;
 
   before(async () => {
-    uniswapPairAddr = await uniswapFactory.getPair(fabianCoin, vladCoin);
+    uniswapPairAddr = await uniswapFactory.getPair(testCoin1, testCoin2);
     uniswapPair = new ethers.Contract(uniswapPairAddr, uniPairAbi, waffle.provider);
-    sushiswapPairAddr = await pancakeFactory.getPair(fabianCoin, vladCoin);
+    sushiswapPairAddr = await pancakeFactory.getPair(testCoin1, testCoin2);
   });
 
   beforeEach(async () => {
     // get WBNB contract
-    const wethFactory = (await ethers.getContractAt('IWETH', fabianCoin)) as IWETH;
+    const wethFactory = (await ethers.getContractAt('IWETH', testCoin1)) as IWETH;
     // access deployed instance of WBNB contract (for some reason named weth...)
-    weth = wethFactory.attach(fabianCoin);
+    weth = wethFactory.attach(testCoin1);
 
     const fbFactory = await ethers.getContractFactory('FlashBotDev');
     // deploy FlashBot contract with WBNB contract address as an argument to the constructor
-    flashBot = (await fbFactory.deploy(fabianCoin)) as FlashBot;
+    flashBot = (await fbFactory.deploy(testCoin1)) as FlashBotDev;
   });
 
   describe('flash swap arbitrage', () => {
@@ -52,31 +54,38 @@ describe('Flashswap', () => {
     // TODO: flaky tests (order matters since blockchain state gets reused); needs fix;
     it('calculate how much profit we get', async () => {
       [signer] = await ethers.getSigners();
-      // transfer 100000 to mdex pair
-      const amountEth = ethers.utils.parseEther('100000');
+      // transfer 10000 to mdex pair
+      const amountEth = ethers.utils.parseEther('10000');
       await weth.deposit({ value: amountEth });
       await weth.transfer(uniswapPairAddr, amountEth);
       await uniswapPair.connect(signer).sync();
 
-      const res = await getProfit(uniswapPairAddr, sushiswapPairAddr);
+      const res = await getProfit(
+          uniswapPairAddr,
+          sushiswapPairAddr,
+          isBaseTokenSmallerWeb3,
+          getOrderedReserves,
+      );
       console.log(res)
       expect(res.profit).to.be.gt(ethers.utils.parseEther('0'));
-      expect(res.baseToken.toLowerCase()).to.be.eq(fabianCoin.toLowerCase());
+      expect(res.baseToken.toLowerCase()).to.be.eq(testCoin1.toLowerCase());
     });
 
     it('do flash swap between Pancake and MDEX', async () => {
-      // transfer 100000 to mdex pair
+      // transfer 10000 to mdex pair
       // TODO:
       //   missalignment with getProfit and arbitrage console.log since deposits somehow carry over the tests;
       //   In case you comment out the deposit, getProfit() == profit gained in flashArbitrage;
       //   needs fix;
-      const amountEth = ethers.utils.parseEther('100000');
+      const amountEth = ethers.utils.parseEther('10000');
       await weth.deposit({ value: amountEth });
       await weth.transfer(uniswapPairAddr, amountEth);
       await uniswapPair.connect(signer).sync();
 
       const balanceBefore = await ethers.provider.getBalance(flashBot.address);
       await flashArbitrage(
+          isBaseTokenSmallerWeb3,
+          getOrderedReserves,
           uniswapPairAddr,
           sushiswapPairAddr,
           flashBot,

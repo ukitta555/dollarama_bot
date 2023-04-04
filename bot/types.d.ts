@@ -13,8 +13,8 @@ export interface OrderedReservesEnhanced {
 }
 
 export interface PoolReservesShort {
-    reserve0: BigNumber,
-    reserve1: BigNumber,
+    _reserve0: BigNumber,
+    _reserve1: BigNumber,
 }
 
 export interface MatchedPoolReserves {
@@ -23,3 +23,13 @@ export interface MatchedPoolReserves {
 }
 
 export type Nullable<T> = T | null;
+
+export type isBaseTokenSmallerFuncType =(pool0: string, pool1: string) =>
+    Promise<{
+        isBaseTokenSmaller: boolean,
+        baseToken: string,
+        quoteToken: string
+    }>
+
+export type getOrderedReservesFuncType = (pool0: string, pool1: string, isBaseTokenSmaller: boolean) =>
+    Promise<OrderedReservesEnhanced>

@@ -10,8 +10,8 @@ export function divideBigNums(x: BigNumber, y: BigNumber): BigNumberPrecise {
 
     const xPrecise = BigNumberPrecise(x.toString())
     const yPrecise = BigNumberPrecise(y.toString())
-    console.log(`Precise: ${xPrecise} ${yPrecise}`)
-    console.log(`Division: ${xPrecise.div(yPrecise)}`)
+    // console.log(`Precise: ${xPrecise} ${yPrecise}`)
+    // console.log(`Division: ${xPrecise.div(yPrecise)}`)
     return xPrecise.div(yPrecise)
 
 } // copy from UniswapV2Library
@@ -78,7 +78,7 @@ export async function getOrderedReserves(
     let [tmpReservesPool0, tmpReservesPool1] = await Promise.all([
         uniswapV2PairPool0.getReserves(),
         uniswapV2PairPool1.getReserves(),
-    ]) as PoolReservesShort[];
+    ]);
     // console.log(reservesPool0, reservesPool1);
 
     let reservesPool0: MatchedPoolReserves;
@@ -103,8 +103,8 @@ export async function getOrderedReserves(
             quoteTokenReserves: tmpReservesPool1.reserve0
         }
     }
-    console.log(`Reserves0: ${reservesPool0.baseTokenReserves}, ${reservesPool0.quoteTokenReserves}`)
-    console.log(`Reserves1: ${reservesPool1.baseTokenReserves}, ${reservesPool1.quoteTokenReserves}`)
+    // console.log(`Reserves0: ${reservesPool0.baseTokenReserves}, ${reservesPool0.quoteTokenReserves}`)
+    // console.log(`Reserves1: ${reservesPool1.baseTokenReserves}, ${reservesPool1.quoteTokenReserves}`)
 
     // probably a bug in smart contract - Solidity does not support precise division of uint's,
     // so there was a possibility that params were not calculated correctly
@@ -118,7 +118,7 @@ export async function getOrderedReserves(
         reservesPool1.quoteTokenReserves,
     )
 
-    console.log(`Prices: ${pricePool0}, ${pricePool1}`)
+    // console.log(`Prices: ${pricePool0}, ${pricePool1}`)
 
     let lowerPricePool;
     let higherPricePool;
@@ -215,15 +215,15 @@ export function calculateBorrowAmount(reserves: OrderedReserves): BigNumberPreci
             BigNumberPrecise("2").multipliedBy(a)
         );
 
-    console.log(
-        x1.decimalPlaces(0, 1).toString(),
-        x2.decimalPlaces(0, 1).toString(),
-        b1.decimalPlaces(0, 1).toString(),
-        b2.decimalPlaces(0, 1).toString(),
-        a.decimalPlaces(0, 1).toString(),
-        b.decimalPlaces(0, 1).toString(),
-        c.decimalPlaces(0, 1).toString()
-    )
+    // console.log(
+    //     x1.decimalPlaces(0, 1).toString(),
+    //     x2.decimalPlaces(0, 1).toString(),
+    //     b1.decimalPlaces(0, 1).toString(),
+    //     b2.decimalPlaces(0, 1).toString(),
+    //     a.decimalPlaces(0, 1).toString(),
+    //     b.decimalPlaces(0, 1).toString(),
+    //     c.decimalPlaces(0, 1).toString()
+    // )
     // see readme for solution of the resulting system and constraints checked here
     if (!((x1.isPositive() && x1.lt(b1)) || (x2.isPositive() && x2.lt(b1)))) {
         throw Error("Bad solution!");
