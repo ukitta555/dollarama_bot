@@ -110,8 +110,6 @@ let main = async (pool_addresses: string[], network = "homestead") => {
       tokensToPairs.set(tokensSorted, [pool])
     }
   }
-  arbitrageLock.locked = false
-
   // Unlock blockLock whenever new block is mined
   chainReader.registerBlockCallback(async (blockNumber: number) => {
     if (blockLock.locked) {
@@ -120,6 +118,8 @@ let main = async (pool_addresses: string[], network = "homestead") => {
       blockLock.locked = false;
     }
   })
+
+  arbitrageLock.locked = false
 }
 
 main([
