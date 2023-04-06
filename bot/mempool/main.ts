@@ -1,4 +1,4 @@
-import { getInfoFromUniswapBasedContract } from "./getInfoFromUniswapBasedContract"
+import { ChainReader} from "./ChainReader"
 import { Pool, ReserveUpdate } from "./types";
 import { watchAddress } from "./watchAddress";
 import { arbitrageFunc } from "../arbitrageEntryPoint"
@@ -8,10 +8,23 @@ import config from "../config";
 import { ethers } from "hardhat";
 import {FlashBotDev} from "../../typechain";
 import log from "../log";
-import {ArbitrageLock} from "../lock";
+import {Lock} from "../lock";
 const ArrayKeyedMap = require("array-keyed-map");
 
-const arbitrageLock: ArbitrageLock = new ArbitrageLock();
+const arbitrageLock: Lock = new Lock();
+const blockLock: Lock = new Lock();
+
+const updateAllPairs = async (
+  reserves: Map<string, Pool>,
+  chainReader: ChainReader
+) => {
+  for (const address of reserves.keys()) {
+    let new_pool = await chainReader.getInfoFromUniswapBasedContract(address);
+    let pool = reserves.get(address)!;
+    pool.reserve0 = new_pool.reserve0;
+    pool.reserve1 = new_pool.reserve1;
+  }
+}
 
 const WatchCallback = async (
     reserves: Map<string, Pool>,
@@ -27,6 +40,12 @@ const WatchCallback = async (
     console.log(`Pool ${pool_address} is undefined in map, do nothing!`)
     return -1
   }
+
+  if (blockLock.locked) {
+    console.log(`Waiting for new block, do nothing!`);
+    return -1
+  }
+
   console.log(`Reserve0 before update: ${pool.reserve0.toString()}`);
   console.log(`Reserve1 before update: ${pool.reserve1.toString()}`)
   pool.reserve0 = pool.reserve0.add(changes.reserve0Delta);
@@ -39,8 +58,9 @@ const WatchCallback = async (
 
   log.debug(`Is arbitraged locked: ${arbitrageLock.locked}`)
   for (const other_pool of tokensToPairs.get(tokensSorted)!) {
-    if (other_pool.address != pool.address && !arbitrageLock.locked) {
+    if (other_pool.address != pool.address && !arbitrageLock.locked && !blockLock.locked) {
         arbitrageLock.locked = true
+        blockLock.locked = true
         // Call aribtrageFunc using current reserves
         await arbitrageFunc(
             flashBot,
@@ -61,12 +81,15 @@ let main = async (pool_addresses: string[], network = "homestead") => {
   const pairs = await tryLoadPairs(Network.ETH_TESTNET);
   const flashBot = (await ethers.getContractAt('FlashBotDev', config.contractAddr)) as FlashBotDev;
   const [baseTokens] = getTokens(Network.ETH_TESTNET);
+  const chainReader = new ChainReader(network);
   
   let reservesMap: Map<string, Pool> = new Map()
   let tokensToPairs: Map<string[], Pool[]> = new ArrayKeyedMap()
 
+  // Do not perform arbitrage until data is gathered and callbacks have been registered
+  arbitrageLock.locked = true
   for (const pool_address of pool_addresses) {
-    let pool = await getInfoFromUniswapBasedContract(pool_address, network);
+    let pool = await chainReader.getInfoFromUniswapBasedContract(pool_address);
     reservesMap.set(pool_address, {
       address: pool_address,
       token0Address: pool.token0Address,
@@ -86,8 +109,17 @@ let main = async (pool_addresses: string[], network = "homestead") => {
     } else {
       tokensToPairs.set(tokensSorted, [pool])
     }
-
   }
+  arbitrageLock.locked = false
+
+  // Unlock blockLock whenever new block is mined
+  chainReader.registerBlockCallback(async (blockNumber: number) => {
+    if (blockLock.locked) {
+      console.log(`New block after arbitrage: ${blockNumber}. Updating reserves...`)
+      await updateAllPairs(reservesMap, chainReader);
+      blockLock.locked = false;
+    }
+  })
 }
 
 main([

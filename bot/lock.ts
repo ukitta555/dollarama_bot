@@ -1,4 +1,4 @@
-export class ArbitrageLock {
+export class Lock {
     private _locked: boolean;
     constructor() {
         this._locked = false;
