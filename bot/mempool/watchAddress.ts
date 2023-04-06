@@ -10,7 +10,6 @@
 */
 import BlocknativeSdk from 'bnc-sdk'
 import WebSocket from 'ws'
-import { getInfoFromUniswapBasedContract } from './getInfoFromUniswapBasedContract'
 import fs from 'fs'
 import { Pool, ReserveUpdate } from './types'
 import { BigNumber } from "ethers";
