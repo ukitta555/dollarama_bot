@@ -1,8 +1,9 @@
-**Note**: This repo is not under maintenning. If you encounter problems when running. Please figure it out by yourself.
+## From developers that have tried to improve open-source implementation of the bot:
 
-This repo is written only for POC. The bot is implemented simply for demostration. It's not robust enough to be competitve with other arb bots that are running in the network. If you want a production-ready arb bot, then you might need to implement a bot by yourself.
+Integrated mempool is not stable yet - we are able to perform at most one arbitrage transaction per block due to using 3rd party API to fetch the MemPool data, which invalidates cached reserves in case we do arbitrage. Therefore, we have to wait for the next block in order to perform arbitrage again using correct info.
+Also, as far as we understand, code doesn't account for uniswap fees when calculating optimal loan values. A slight modification of the final formula would be required in order to improve the profit figures.
 
-If you have any question, please read the issues first. You may find your answer there.
+The following is the README.md file that was included with the baseline implementation.
 
 # AMM Arbitrageur
 
